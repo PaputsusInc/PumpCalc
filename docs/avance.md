@@ -65,4 +65,29 @@ Evaluación observada para el caso base al caudal tabulado Q = 3,765443 m³/h: v
 
 Archivos preparados: `pumpcalc/friccion.py`, `pumpcalc/perdidas.py`, `tests/test_friccion.py`, `tests/test_perdidas.py` y `docs/avance.md`. No cambió la interfaz web, por lo que no fue necesaria una nueva revisión en navegador.
 
-Commit propuesto: `feat: calcular fricción y pérdidas hidráulicas`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. El siguiente paso es el 4, resolver y verificar el punto de operación por bisección.
+Commit registrado: `09e841c` (`feat: calcular fricción y pérdidas hidráulicas`). Al retomar el paso 4 ya estaba registrado y el árbol de trabajo estaba limpio; no se duplicó.
+
+## Paso 4 Resolver y verificar el punto de operación
+
+Fecha: 10 de noviembre de 2026, America/Bogota.
+
+Resultado: `pumpcalc/biseccion.py` implementa un solver independiente del modelo hidráulico. Acepta raíces exactas en extremos o punto medio, comprueba el cambio de signo y guarda a, b, c, F(c) y semiancho antes de dividir cada intervalo. La parada normal exige simultáneamente semiancho ≤ 10⁻⁷ m³/s y residuo absoluto ≤ 10⁻⁴ m, con máximo de 80 iteraciones. Los parámetros son configurables desde Python para las pruebas. Si se agota el límite, devuelve falta de convergencia y no presenta una raíz como solución.
+
+`pumpcalc/operacion.py` integra interpolación y pérdidas y resuelve F(Q) = Hb(Q) − Hs(Q) exactamente en el dominio ingresado de la bomba. Devuelve estado, mensaje, punto de operación, tramo interpolado y evidencia de bisección. El punto incluye los datos del sistema y la traza de fricción únicamente de la evaluación final. Distingue ambos casos sin cambio de signo y los fallos de bisección o Colebrook. La ausencia de solución se expresa con punto ausente, no con Q = 0.
+
+Comprobación ejecutada: `.venv\Scripts\python.exe -m pytest` → **207 aprobadas y 1 módulo heredado de interfaz omitido** por ausencia de CustomTkinter. Las 37 pruebas nuevas cubren la raíz analítica √21 − 1 con tolerancias de 10⁻⁶ para variable y residuo, cotas y trazas, raíces en extremos y nodo interior, dominios que empiezan por encima de cero, ambos signos sin cruce y agotamiento de iteraciones. Se verifican también la propagación del fallo de Colebrook y una solución válida con Q = 0, distinta de ausencia de cruce.
+
+Resultados observados con los parámetros predeterminados:
+
+| Caso | Q en m³/h | H de bomba en m | Iteraciones | Residuo en m | Cota de Q en m³/s |
+| --- | --- | --- | --- | --- | --- |
+| A base | 3,765449524 | 20,641853333 | 17 | −0,000067489 | 1,059638 × 10⁻⁸ |
+| B diámetro de 32 mm | 4,381752014 | 15,564231873 | 17 | 0,000066667 | 1,059638 × 10⁻⁸ |
+| Longitud de 80 m | 3,227949142 | 24,404356003 | 19 | −0,000026510 | 2,649095 × 10⁻⁹ |
+| Desnivel de 40 m | No aplica | No aplica | 0 | No aplica | No aplica |
+
+Los tres puntos cumplen errores absolutos máximos de 0,001 m³/h en Q y 0,001 m en H frente a las referencias de la fuente, además de las dos condiciones internas de parada. El factor de Darcy del caso base cumple el error absoluto máximo de 10⁻⁷. Con Δz = 40 m se informa que la curva de bomba queda por debajo de la del sistema en el intervalo disponible. No se extrapola ni se afirma qué ocurre fuera de los datos.
+
+Archivos preparados: `pumpcalc/biseccion.py`, `pumpcalc/operacion.py`, `tests/test_biseccion.py`, `tests/test_operacion.py` y `docs/avance.md`. La interfaz web sigue mostrando la vista inicial; este paso verifica el motor y no requiere revisión nueva en navegador.
+
+Commit propuesto: `feat: resolver el punto de operación por bisección`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. El siguiente paso es el 5, conectar el formulario y los resultados de un escenario.
