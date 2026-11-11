@@ -100,6 +100,7 @@ def factor_friccion(reynolds: float, rugosidad_relativa: float, *,
     if reynolds <= 2000:
         return ResultadoFriccion(64 / reynolds, 'laminar')
     if reynolds < 4000:
+        # Esta unión continua es una decisión didáctica, no una ley de transición.
         auxiliar = colebrook(4000, rugosidad_relativa, max_iteraciones=max_iteraciones)
         t = (reynolds - 2000) / 2000
         f = (1 - t) * (64 / 2000) + t * auxiliar.factor_darcy

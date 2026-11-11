@@ -72,6 +72,7 @@ class ComparacionEscenarios:
         if sesion.estado != 'solucion' or resultado is None or resultado.punto is None:
             return EvaluacionMeta('sin_resultado')
         margen = resultado.punto.caudal_m3s - self.objetivo_m3s
+        # Se usa la cota de la raíz calculada, no un umbral físico de la instalación.
         if abs(margen) <= resultado.biseccion.cota_error:
             return EvaluacionMeta('en_limite', margen)
         return EvaluacionMeta('alcanza' if margen > 0 else 'no_alcanza', margen)

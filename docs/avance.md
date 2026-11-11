@@ -183,4 +183,24 @@ Comprobaciones realizadas:
 
 Archivos preparados: `pumpcalc/comparacion.py`, `pumpcalc/panel_comparacion.py`, `pumpcalc/ejemplos.py`, `pumpcalc/escena.py`, `pumpcalc/presentacion.py`, `pumpcalc/simulacion.py`, `pumpcalc/vista.py`, `tests/test_comparacion.py`, `tests/test_vista_comparacion.py`, `tests/test_vista.py`, `docs/README.md`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`. Los cambios ajenos al desarrollo de PumpCalc se conservan fuera del commit.
 
-Commit propuesto: `feat: comparar escenarios y evaluar el caudal objetivo`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. El siguiente paso es el 9, instalación limpia, verificación de entrega y guía de sustentación, incluyendo retomar la revisión visual pendiente cuando esté disponible.
+Commit registrado: `601b3fd` (`feat: comparar escenarios y evaluar el caudal objetivo`). Al retomar el paso 9 se revisaron los 13 archivos preparados antes de registrarlo. La revisión visual pendiente se mantiene documentada.
+
+## Paso 9 Verificar la entrega y preparar la sustentación
+
+Fecha: 11 de noviembre de 2026, America/Bogota.
+
+Estado: instalación limpia, pruebas automatizadas, arranque y documentación verificados. **Paso pendiente de cierre por revisión visual en navegador real**; no se declara completada toda la aceptación del plan.
+
+Se creó un entorno independiente en `.tmp\entrega-limpia-20261111` y se instaló `requirements.txt`. Se confirmó Python 3.13.7, NiceGUI 4.0.0, pytest 9.2.0 y aislamiento respecto del intérprete base. `python -m pip check` informó `No broken requirements found.`. Después de añadir comentarios de unidades, dominio, transición y cota numérica, `python -m pytest` produjo **282 passed, 1 skipped in 7.08s**. La omisión corresponde al módulo heredado de interfaz CustomTkinter, que no forma parte de la entrega web.
+
+El arranque con el intérprete nuevo mostró `NiceGUI ready to go on http://127.0.0.1:8080`. La solicitud HTTP devolvió 200 y contenía resultado base, copiar A/B, comparación, objetivo común, ejemplos y pausa. El servidor se detuvo al terminar. El navegador integrado devolvió `The browser access host is unavailable`; no se declara observado el dibujo o movimiento real. El informe deja un recorrido visual concreto para resolver esta verificación pendiente.
+
+Se ejecutaron nuevamente las referencias desde el entorno limpio: Q de A = 3,765449524 m³/h; B = 4,381752014 m³/h; L = 80 m = 3,227949142 m³/h; Δz = 40 m = sin intersección. Los tres puntos cumplen las tolerancias de referencia y las dos condiciones internas de bisección. Se verificaron también el factor laminar, Colebrook de referencia, la raíz analítica y la meta A/B. Las cifras completas y el alcance de las pruebas están en [VALIDACION_FINAL.md](VALIDACION_FINAL.md).
+
+Entregables: [README raíz](../README.md) como entrada al proyecto, [manual ampliado](README.md) con instalación, tres ejemplos, unidades, métodos, tolerancias y tutorial del motor; [guía de sustentación](GUIA_SUSTENTACION.md) de 6–8 minutos; [informe de verificación](VALIDACION_FINAL.md) con evidencia y pendientes. Se actualizó [instalación local](INSTALACION_LOCAL.md) y se comentaron cuatro módulos del motor sin cambiar sus algoritmos. Se conservaron intactas las fuentes de verdad y los antecedentes de escritorio.
+
+Se verificaron los enlaces locales y los bloques Markdown de los seis documentos afectados. El tutorial del manual se ejecutó en el entorno limpio y reprodujo el caso base. Se confirmó que el servidor de comprobación quedó detenido y se revisó el diff preparado sin errores de espacios.
+
+Archivos preparados: `README.md`, `docs/README.md`, `docs/INSTALACION_LOCAL.md`, `docs/GUIA_SUSTENTACION.md`, `docs/VALIDACION_FINAL.md`, `docs/avance.md`, `pumpcalc/comparacion.py`, `pumpcalc/entradas.py`, `pumpcalc/friccion.py` y `pumpcalc/operacion.py`.
+
+Commit propuesto: `chore: verificar y documentar la entrega de PumpCalc`. Cambios documentales y comentarios preparados para revisión; todavía no se ha creado este último commit. Al retomar, revisar el contenido preparado y completar la comprobación visual pendiente antes de declarar cerrada toda la entrega.

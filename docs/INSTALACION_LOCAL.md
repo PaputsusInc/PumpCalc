@@ -28,10 +28,13 @@ Si prefieres activar el entorno:
 python app.py
 ```
 
-Desde el paso 2, las pruebas de validación e interpolación de la nueva línea base se ejecutan con:
+Comprueba las dependencias y ejecuta la suite completa con:
 
 ```powershell
+.\.venv\Scripts\python.exe -m pip check
 .\.venv\Scripts\python.exe -m pytest
 ```
+
+El 11 de noviembre de 2026 se repitieron instalación, pruebas y arranque en un entorno nuevo, `.tmp\entrega-limpia-20261111`: 282 pruebas aprobadas, 1 módulo heredado omitido y respuesta HTTP 200. La revisión visual sigue pendiente porque el host del navegador integrado no está disponible. Consulta el [informe de verificación](VALIDACION_FINAL.md) para los resultados y el recorrido pendiente, y la [guía de sustentación](GUIA_SUSTENTACION.md) para demostrar los ejemplos.
 
 Las pruebas numéricas heredadas se conservan como comprobación de la versión anterior. La prueba de interfaz de escritorio se omite explícitamente si no está instalado CustomTkinter, que no forma parte de las dependencias de la aplicación web. Esa omisión no corresponde a la interfaz NiceGUI. Las comprobaciones efectivamente realizadas se registran en [avance.md](avance.md). El alcance final se describe en [README.md](README.md) y el orden de trabajo en el [plan de desarrollo](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md).

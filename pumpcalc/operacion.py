@@ -31,9 +31,9 @@ def resolver_operacion(escenario: Escenario, *,
                        max_iteraciones_colebrook: int = MAX_ITERACIONES_COLEBROOK) -> ResultadoOperacion:
     """Busca el cruce exactamente en el dominio ingresado de la bomba.
 
-La traza de fricción retenida es únicamente la del resultado final.
-Una falta de solución nunca se representa mediante un caudal cero.
-"""
+    La traza de fricción retenida es únicamente la del resultado final.
+    Una falta de solución nunca se representa mediante un caudal cero.
+    """
     def sistema(q: float) -> ResultadoSistema:
         return evaluar_sistema(
             escenario.instalacion, q, max_iteraciones_colebrook=max_iteraciones_colebrook,
@@ -43,6 +43,7 @@ Una falta de solución nunca se representa mediante un caudal cero.
         return altura_bomba(escenario.curva, q) - sistema(q).altura_sistema_m
 
     try:
+        # El intervalo pertenece a los datos de bomba, no a las muestras de la gráfica.
         a, b = escenario.curva.dominio_m3s
         resultado = biseccion(diferencia, a, b, parametros=parametros)
         if resultado.estado == 'sin_interseccion':

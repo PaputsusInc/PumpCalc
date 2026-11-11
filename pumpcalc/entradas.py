@@ -118,6 +118,7 @@ def validar_instalacion(*, longitud_m: object, diametro_mm: object,
     _rango(rugosidad, 0, 1, 'rugosidad_mm')
     if rugosidad / diametro > 0.05:
         raise ErrorEntrada('rugosidad_mm', 'La rugosidad relativa ε/D no puede superar 0,05.')
+    # Las magnitudes en mm se convierten una sola vez en la frontera del motor.
     return Instalacion(longitud, diametro / 1000, desnivel, rugosidad / 1000, k)
 
 
