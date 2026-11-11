@@ -3,6 +3,8 @@
 PumpCalc es un simulador web local en Python y NiceGUI para explorar el caudal de una bomba en una instalación simple. Incluye animación 2D vinculada a la velocidad calculada, comparación de escenarios A/B y explicación de interpolación lineal, Colebrook por punto fijo y bisección.
 **Estado al 11 de noviembre de 2026:** paso 9 completado con instalación limpia, pruebas automatizadas y aceptación visual comunicada por el usuario. La evidencia y el alcance de esa aceptación están en el [informe de verificación](VALIDACION_FINAL.md).
 
+Después de ese cierre se incorporó, por solicitud del usuario, una nueva presentación visual de laboratorio: azul profundo, turquesa y lima, controles junto a la simulación, indicadores destacados y escenas sobre fondo oscuro. El tema local está en [tema.py](../pumpcalc/tema.py). Las 282 pruebas pasan con el rediseño; su apariencia aún no ha sido observada directamente por el agente ni aceptada de nuevo por el usuario. La aceptación anterior corresponde a la versión de cierre.
+
 Fuentes de verdad: [propuesta v4](../Baseline%20y%20pasos/PumpCalc%20propuesta%20v4.docx), [línea base con animación](../Baseline%20y%20pasos/PumpCalc_linea_base_Codex_con_animacion.md) y [plan de desarrollo por pasos](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md). La propuesta y la línea base fijan el producto y los cálculos; el plan establece el orden de implementación y verificación. Los documentos de `docs` desarrollan esas fuentes y no las sustituyen.
 
 ## Estado del repositorio y de esta documentación

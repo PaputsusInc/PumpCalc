@@ -18,17 +18,19 @@ class VistaAnimacion:
         self.ultimo_fotograma = perf_counter()
         self.grosor = 24.0
         self.fondo = ''
-        self.contenedor = ui.card().classes('w-full p-5 gap-3').mark(f'escena-{nombre}')
+        self.contenedor = ui.card().classes(f'pc-panel pc-scene pc-scene-{nombre.lower()} w-full').mark(f'escena-{nombre}')
         with self.contenedor:
-            with ui.row().classes('items-center justify-between w-full'):
-                ui.label(f'Escenario {nombre} · Agua en la instalación').classes('text-xl font-semibold')
+            with ui.row().classes('pc-scene-heading items-center justify-between w-full'):
+                with ui.row().classes('items-center gap-2'):
+                    ui.label(nombre).classes('pc-scene-letter')
+                    ui.label(f'Escenario {nombre} · Agua en la instalación').classes('pc-section-title')
                 self.boton = ui.button('Pausar animación', icon='pause', on_click=self.alternar).props('outline')
-            self.estado = ui.label().classes('text-sm text-slate-600').props('role=status aria-live=polite')
+            self.estado = ui.label().classes('pc-scene-status').props('role=status aria-live=polite')
             self.imagen = ui.interactive_image(size=(ANCHO_ESCENA, ALTO_ESCENA)).classes(
                 'w-full max-w-4xl mx-auto'
             ).props('aria-label="Flujo de agua entre dos depósitos a través de una bomba y tubería"')
             ui.label('Movimiento ilustrativo · Niveles fijos; no simula el llenado de tanques.').classes(
-                'text-sm text-slate-600'
+                'pc-scene-caption'
             )
             self.temporizador = ui.timer(1 / 30, self.fotograma, immediate=False)
         self.actualizar()

@@ -213,4 +213,20 @@ Se volvió a intentar el navegador integrado, que devolvió `The browser access 
 
 Con esta aceptación se cierra el pendiente visual del paso 9 y el plan de nueve pasos queda completado. Se actualizaron los seis documentos de entrega para reflejar el cierre y el commit ya registrado. Este ajuste es documental: no cambia el código ni requiere repetir la suite numérica; conserva el resultado previo de 282 pruebas aprobadas y una omisión heredada.
 
-Commit de cierre documental propuesto: `docs: registrar la aceptación visual de PumpCalc`. Se deja preparado para registrar al decir «sigamos»; ese turno cierra Git sin iniciar otro paso de desarrollo.
+Commit de cierre documental registrado: `bedf6c9` (`´visual`). Al iniciar la actualización visual posterior ya estaba registrado y el árbol de trabajo estaba limpio; no se duplicó.
+
+## Actualización visual solicitada después del plan
+
+Fecha: 11 de noviembre de 2026, America/Bogota.
+
+Solicitud: una interfaz más vibrante y llamativa. Resultado: identidad de laboratorio con azul profundo, turquesa eléctrico y lima; portada con tipografía grande, marca y ecuación ilustrativa; barra de acciones y ejemplos; controles en una columna y escenas/resultados en otra; tarjetas destacadas para Q, H y v; escenas SVG oscuras con rejilla, depósitos y bomba de alto contraste; colores coordinados para curvas, comparación y detalle numérico.
+
+`pumpcalc/tema.py` concentra los estilos locales sin fuentes remotas, imágenes descargadas ni dependencias nuevas. Incluye reglas para ventanas estrechas, foco visible y reducción de transiciones decorativas según la preferencia del sistema. Se conservaron etiquetas, errores, marcadores de pruebas, independencia A/B, pausa y eventos de recálculo. El cambio no modifica el motor ni las escalas o la geometría de la animación.
+
+Comprobaciones: `.venv\Scripts\python.exe -m pytest` → **282 passed, 1 skipped in 6.45s**. La omisión sigue correspondiendo a la interfaz antigua CustomTkinter. Los recorridos NiceGUI existentes pasan con la nueva composición. Se reinició `python app.py`; `/` devolvió HTTP 200 con tema, portada, laboratorio, escena, resultado base y comparación presentes. `git diff --check` no informó errores de espacios.
+
+La comprobación visual del rediseño se intentó con el navegador integrado y devolvió `The browser access host is unavailable`. No se declara observada su apariencia ni aceptada por el usuario con base en la confirmación anterior: esa correspondía a la versión previa. La aplicación quedó ejecutándose en `http://127.0.0.1:8080` para revisar el cambio al recargar.
+
+Archivos preparados: `pumpcalc/tema.py`, `pumpcalc/vista.py`, `pumpcalc/escena.py`, `pumpcalc/animacion.py`, `pumpcalc/presentacion.py`, `pumpcalc/panel_comparacion.py`, `pumpcalc/detalle.py`, `docs/README.md`, `docs/VALIDACION_FINAL.md` y `docs/avance.md`.
+
+Commit propuesto: `feat: renovar la interfaz visual del laboratorio PumpCalc`. Se deja preparado sin crear todavía el commit; la revisión visual de esta renovación sigue pendiente.

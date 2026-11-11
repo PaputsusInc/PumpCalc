@@ -10,17 +10,20 @@ from pumpcalc.presentacion import opciones_comparacion
 def mostrar_comparacion(proyecto: ComparacionEscenarios) -> None:
     if not proyecto.comparando:
         return
-    with ui.card().classes('w-full p-6 gap-4').mark('comparacion'):
-        ui.label('Comparación de escenarios A y B').classes('text-xl font-semibold')
+    with ui.card().classes('pc-panel w-full').mark('comparacion'):
+        with ui.row().classes('pc-section-head'):
+            ui.icon('compare_arrows', size='20px').classes('pc-section-icon').props('aria-hidden=true')
+            ui.label('Comparación de escenarios A y B').classes('pc-section-title')
         diferencia = proyecto.diferencia_caudal()
         if diferencia is None:
             ui.label('Comparación de caudal no disponible: faltan resultados vigentes en A o B.')
         else:
-            ui.label(f'Cambio B − A: {diferencia.cambio_m3s * 3600:+.6f} m³/h.')
-            ui.label(f'Diferencia absoluta: {diferencia.diferencia_absoluta_m3s * 3600:.6f} m³/h.')
-            ui.label('Porcentaje respecto de A: no aplicable (Q de A es cero).'
-                     if diferencia.porcentaje is None else
-                     f'Variación respecto de A: {diferencia.porcentaje:+.3f} %.')
+            with ui.element('div').classes('pc-compare-delta'):
+                ui.label(f'Cambio B − A: {diferencia.cambio_m3s * 3600:+.6f} m³/h.')
+                ui.label(f'Diferencia absoluta: {diferencia.diferencia_absoluta_m3s * 3600:.6f} m³/h.')
+                ui.label('Porcentaje respecto de A: no aplicable (Q de A es cero).'
+                         if diferencia.porcentaje is None else
+                         f'Variación respecto de A: {diferencia.porcentaje:+.3f} %.')
         filas = []
         for clave, etiqueta in (
             ('longitud_m', 'Longitud L (m)'), ('diametro_mm', 'Diámetro D (mm)'),

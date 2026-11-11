@@ -25,28 +25,36 @@ def opciones_curvas(escenario: Escenario, resultado: ResultadoOperacion, *,
     bomba = [[p.caudal_m3s * 3600, p.altura_m] for p in escenario.curva.puntos]
     series = [
         {'name': 'Bomba interpolada', 'type': 'line', 'data': bomba,
-         'showSymbol': False, 'smooth': False, 'lineStyle': {'color': '#036b80', 'width': 3}},
+         'showSymbol': False, 'smooth': False, 'lineStyle': {'color': '#087f8c', 'width': 3.5}},
         {'name': 'Sistema', 'type': 'line', 'data': sistema,
          'showSymbol': False, 'smooth': False,
-         'lineStyle': {'color': '#b45309', 'width': 3, 'type': 'dashed'}},
+         'lineStyle': {'color': '#d97716', 'width': 3, 'type': 'dashed'}},
         {'name': 'Puntos de bomba', 'type': 'scatter', 'data': bomba, 'symbolSize': 8,
-         'itemStyle': {'color': '#036b80'}},
+         'itemStyle': {'color': '#087f8c', 'borderColor': '#ffffff', 'borderWidth': 2}},
     ]
     if resultado.punto is not None and resultado.estado == 'solucion':
         punto = resultado.punto
         series.append({
             'name': 'Punto de operación', 'type': 'scatter', 'symbol': 'diamond',
-            'symbolSize': 15, 'data': [[punto.caudal_m3s * 3600, punto.altura_m]],
-            'itemStyle': {'color': '#7e22ce'}, 'z': 10,
+            'symbolSize': 17, 'data': [[punto.caudal_m3s * 3600, punto.altura_m]],
+            'itemStyle': {'color': '#633bd6', 'borderColor': '#ffffff', 'borderWidth': 2}, 'z': 10,
         })
     return {
         'animation': False,
-        'tooltip': {'trigger': 'axis'},
-        'legend': {'top': 0, 'type': 'scroll'},
-        'grid': {'top': 55, 'left': 55, 'right': 20, 'bottom': 60, 'containLabel': True},
+        'textStyle': {'fontFamily': 'Segoe UI, sans-serif', 'color': '#526b7c'},
+        'tooltip': {'trigger': 'axis', 'backgroundColor': '#082b3a', 'borderColor': '#315462',
+                    'textStyle': {'color': '#e2f5f5'}, 'padding': 12},
+        'legend': {'top': 0, 'type': 'scroll', 'itemWidth': 18, 'itemHeight': 9,
+                   'textStyle': {'color': '#456375', 'fontSize': 11}},
+        'grid': {'top': 60, 'left': 14, 'right': 28, 'bottom': 45, 'containLabel': True},
         'xAxis': {'type': 'value', 'name': 'Caudal Q (m³/h)', 'nameLocation': 'middle',
-                  'nameGap': 35, 'min': a * 3600, 'max': b * 3600},
-        'yAxis': {'type': 'value', 'name': 'Altura H (m)', 'min': 0},
+                  'nameGap': 32, 'min': a * 3600, 'max': b * 3600,
+                  'axisLine': {'lineStyle': {'color': '#c6d8e2'}},
+                  'axisLabel': {'color': '#526b7c'},
+                  'splitLine': {'lineStyle': {'color': '#e7eff3', 'type': 'dashed'}}},
+        'yAxis': {'type': 'value', 'name': 'Altura H (m)', 'min': 0,
+                  'axisLabel': {'color': '#526b7c'},
+                  'splitLine': {'lineStyle': {'color': '#e7eff3', 'type': 'dashed'}}},
         'series': series,
     }
 
@@ -85,7 +93,7 @@ def opciones_comparacion(casos: dict[str, tuple[Escenario, ResultadoOperacion]])
         if opciones is None:
             opciones = actuales
         dominios.append(escenario.curva.dominio_m3s)
-        color = '#036b80' if nombre == 'A' else '#7e22ce'
+        color = '#087f8c' if nombre == 'A' else '#633bd6'
         for serie in actuales['series']:
             serie['name'] += f' ({nombre})'
             if serie['type'] == 'line':

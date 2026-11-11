@@ -88,3 +88,11 @@ Este guion sirve para futuras revisiones y no es un registro de observaciones in
 ## Límites de la evidencia
 
 Las tolerancias certifican consistencia numérica con las referencias del modelo propuesto. No cuantifican errores de medición, variaciones de bombas reales ni incertidumbre física. La transición es una aproximación didáctica advertida. La animación representa flujo en una tubería llena con niveles fijos, sin escala geométrica ni llenado temporal. No se ha realizado una validación experimental de una instalación física.
+
+## Actualización visual posterior al cierre
+
+El 11 de noviembre de 2026 el usuario solicitó una interfaz más vibrante y llamativa. Se incorporó una identidad de laboratorio con azul profundo, turquesa y lima, una portada tipográfica, distribución de controles y simulación en columnas, indicadores principales destacados, escenas con rejilla y depósitos de agua sobre fondo oscuro y una paleta coordinada para gráficas y comparación. Los estilos locales se concentran en `pumpcalc/tema.py`, con ajustes para ventanas estrechas, foco visible y reducción de las transiciones decorativas según la preferencia de movimiento del dispositivo. La animación hidráulica conserva su pausa independiente.
+
+Verificación del rediseño: `.venv\Scripts\python.exe -m pytest` produjo **282 passed, 1 skipped in 6.45s**. Los recorridos simulados existentes verificaron edición, errores, recálculo, pausa, ejemplos, comparación y meta sin cambios en sus resultados esperados. La aplicación se reinició y respondió HTTP **200** con el tema, portada, distribución de laboratorio, escena, resultado base y controles de comparación presentes. No se añadieron dependencias ni cambiaron las ecuaciones, tolerancias, geometría del recorrido o escalas de movimiento y grosor.
+
+El intento de revisar esta versión en el navegador integrado devolvió `The browser access host is unavailable`. La apariencia del rediseño en escritorio y móvil queda pendiente de observación visual; sus reglas adaptables están implementadas, pero no se presenta su disposición como comprobada en pantalla. La aceptación manual anterior se refiere a la versión de cierre, no a este cambio posterior. La aplicación quedó ejecutándose para que el usuario pueda recargar y revisar la nueva presentación.

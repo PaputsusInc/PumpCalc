@@ -9,6 +9,7 @@ from pumpcalc.escena import VistaAnimacion
 from pumpcalc.friccion import ErrorConvergencia
 from pumpcalc.presentacion import opciones_curvas
 from pumpcalc.panel_comparacion import mostrar_comparacion
+from pumpcalc.tema import aplicar_tema
 
 
 ESTADOS = {
@@ -44,9 +45,9 @@ def construir_vista() -> None:
         for entrada in campos.values():
             entrada.validate()
         if proyecto.comparando:
-            vistas_escenas.classes(add='md:grid-cols-2')
+            vistas_escenas.classes(add='pc-comparing')
         else:
-            vistas_escenas.classes(remove='md:grid-cols-2')
+            vistas_escenas.classes(remove='pc-comparing')
         for nombre, escena in escenas.items():
             escena.sesion = proyecto.sesiones[nombre]
             escena.contenedor.set_visibility(proyecto.comparando or nombre == proyecto.activo)
@@ -138,13 +139,14 @@ def construir_vista() -> None:
 
     @ui.refreshable
     def metas() -> None:
-        for nombre in proyecto.sesiones:
-            evaluacion = proyecto.evaluar_meta(nombre)
-            ui.label(f'{nombre}: {MENSAJES_META[evaluacion.estado]}')
-            if evaluacion.margen_m3s is not None:
-                ui.label(f'Margen {nombre}: {numero(evaluacion.margen_m3s * 3600)} m³/h').classes(
-                    'text-sm text-slate-600'
-                )
+        with ui.element('div').classes('pc-meta-grid'):
+            for nombre in proyecto.sesiones:
+                evaluacion = proyecto.evaluar_meta(nombre)
+                with ui.element('div').classes(f'pc-meta pc-meta-{nombre.lower()}'):
+                    ui.label(f'{nombre}: {MENSAJES_META[evaluacion.estado]}')
+                    if evaluacion.margen_m3s is not None:
+                        with ui.element('small'):
+                            ui.label(f'Margen {nombre}: {numero(evaluacion.margen_m3s * 3600)} m³/h')
 
     @ui.refreshable
     def comparacion() -> None:
@@ -174,11 +176,11 @@ def construir_vista() -> None:
         for clave in list(campos):
             if clave.startswith('puntos.'):
                 campos.pop(clave)
-        with ui.element('table').classes('w-full border-collapse text-left'):
+        with ui.element('table').classes('pc-pump-table text-left'):
             with ui.element('thead'):
                 with ui.element('tr'):
                     for titulo in ('Punto', 'Caudal (m³/h)', 'Altura (m)', ''):
-                        with ui.element('th').classes('p-2 text-sm font-medium text-slate-600'):
+                        with ui.element('th'):
                             ui.label(titulo)
             with ui.element('tbody'):
                 for indice, (q, h) in enumerate(sesion.puntos):
@@ -207,9 +209,9 @@ def construir_vista() -> None:
 
     @ui.refreshable
     def resultados() -> None:
-        with ui.card().classes('w-full p-6 gap-4'):
-            ui.label(f'Resultados · Escenario {proyecto.activo}').classes('text-xl font-semibold')
-            ui.label(ESTADOS[sesion.estado]).classes('text-lg font-medium').props(
+        with ui.card().classes('pc-panel w-full'):
+            seccion(f'Resultados · Escenario {proyecto.activo}', 'El equilibrio de tu instalación.', 'insights')
+            ui.label(ESTADOS[sesion.estado]).classes(f'pc-status pc-status-{sesion.estado}').props(
                 'role=status aria-live=polite'
             )
             if sesion.error is not None:
@@ -233,11 +235,16 @@ def construir_vista() -> None:
                         ('Factor de Darcy', 'No aplicable' if f is None else numero(f, 8), ''),
                         ('Régimen de flujo', REGIMENES[sistema.friccion.regimen], ''),
                     ]
-                    with ui.element('div').classes('grid grid-cols-2 gap-x-6 gap-y-5 w-full'):
-                        for etiqueta, valor, unidad in indicadores:
-                            with ui.column().classes('gap-0'):
-                                ui.label(etiqueta).classes('text-sm text-slate-600')
-                                ui.label(f'{valor} {unidad}'.strip()).classes('text-xl font-semibold')
+                    with ui.element('div').classes('pc-kpis'):
+                        for indice, (etiqueta, valor, unidad) in enumerate(indicadores[:3]):
+                            with ui.element('div').classes(f'pc-kpi pc-kpi-{indice}'):
+                                ui.label(etiqueta).classes('pc-kpi-label')
+                                ui.label(f'{valor} {unidad}'.strip()).classes('pc-kpi-value')
+                    with ui.element('div').classes('pc-metrics'):
+                        for etiqueta, valor, unidad in indicadores[3:]:
+                            with ui.column().classes('pc-metric'):
+                                ui.label(etiqueta).classes('pc-metric-label')
+                                ui.label(f'{valor} {unidad}'.strip()).classes('pc-metric-value')
                     if sistema.friccion.advertencia:
                         ui.label(sistema.friccion.advertencia).classes('text-amber-800')
                     ui.label('H representa altura de energía, no una presión medida.').classes(
@@ -245,7 +252,7 @@ def construir_vista() -> None:
                     )
                 if sesion.escenario is not None and not proyecto.comparando:
                     ui.separator()
-                    ui.label('Curvas de bomba y sistema').classes('text-lg font-semibold')
+                    seccion('Curvas de bomba y sistema', 'Donde se cruzan, el sistema encuentra su caudal.', 'show_chart')
                     try:
                         opciones = opciones_curvas(sesion.escenario, sesion.resultado)
                         ui.echart(opciones, renderer='svg').classes('w-full').style('height:420px')
@@ -257,48 +264,57 @@ def construir_vista() -> None:
                         ui.label(f'No se pudo completar la curva del sistema: {error}').classes('text-red-700')
                 mostrar_detalle(sesion.resultado)
 
-    ui.colors(primary='#036b80')
-    with ui.header().classes('items-center gap-3'):
-        ui.icon('water_drop', size='2rem')
-        ui.label('PumpCalc').classes('text-2xl font-semibold')
-        ui.label('Simulador de bombeo').classes('text-base')
-    with ui.column().classes('w-full max-w-7xl mx-auto p-6 gap-6'):
-        ui.label('Simula tu instalación de bombeo').classes('text-3xl font-semibold')
-        ui.label('Una bomba, una tubería y dos depósitos abiertos con niveles fijos.').classes(
-            'text-lg text-slate-600'
-        )
-        with ui.row().classes('items-center gap-3'):
-            selector = ui.toggle(['A', 'B'], value='A', on_change=
-                                 lambda e: cambiar_activo(e.value) if not restaurando else None).mark(
-                'selector-escenario'
-            )
-            ui.button('Simular', icon='play_arrow', on_click=simular)
-            ui.button('Cargar caso base', icon='restart_alt', on_click=lambda: cargar_ejemplo()).props('outline')
-            ui.button('Copiar A en B', icon='content_copy', on_click=copiar).props('outline')
-            ui.switch('Comparar A y B', on_change=lambda e: cambiar_comparacion(e.value))
-        with ui.row().classes('w-full items-center gap-3'):
-            ejemplo = ui.select(EJEMPLOS, label='Ejemplo', value='base').classes('w-60')
-            ui.button('Cargar ejemplo', on_click=lambda: cargar_ejemplo(ejemplo.value)).props('outline')
-            ui.label('Los ejemplos se cargan en el escenario activo y usan datos ficticios.').classes('text-sm')
-        with ui.card().classes('w-full p-4'):
-            objetivo = ui.input('Caudal objetivo común (m³/h, opcional)', value=proyecto.objetivo_texto,
-                                on_change=lambda e: cambiar_objetivo(e.value),
-                                validation=lambda _: str(proyecto.error_objetivo)
-                                if proyecto.error_objetivo else None).props('outlined inputmode=decimal')
-            metas()
-        with ui.element('div').classes('grid grid-cols-1 gap-4 w-full') as vistas_escenas:
-            for nombre, estado_sesion in proyecto.sesiones.items():
-                escenas[nombre] = VistaAnimacion(estado_sesion, nombre)
-                escenas[nombre].contenedor.set_visibility(nombre == 'A')
-        comparacion()
-        with ui.element('div').classes('grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start'):
-            with ui.column().classes('w-full gap-6'):
-                with ui.card().classes('w-full p-6 gap-4'):
-                    ui.label('Instalación').classes('text-xl font-semibold')
-                    ui.label('Acepta coma o punto decimal, sin separadores de miles.').classes(
-                        'text-sm text-slate-600'
-                    )
-                    with ui.element('div').classes('grid grid-cols-1 sm:grid-cols-2 gap-4 w-full'):
+    def seccion(titulo: str, subtitulo: str, icono: str) -> None:
+        with ui.element('div').classes('pc-section-head'):
+            ui.icon(icono, size='20px').classes('pc-section-icon').props('aria-hidden=true')
+            with ui.column().classes('gap-0'):
+                ui.label(titulo).classes('pc-section-title')
+                ui.label(subtitulo).classes('pc-section-subtitle')
+
+    aplicar_tema()
+    with ui.header().classes('pc-header items-center gap-3'):
+        ui.icon('water_drop', size='23px').classes('pc-logo').props('aria-hidden=true')
+        ui.label('PumpCalc').classes('pc-brand')
+        ui.label('Explora. Compara. Entiende.').classes('pc-header-note')
+        with ui.row().classes('pc-local'):
+            ui.icon('circle').props('aria-hidden=true')
+            ui.label('Tu laboratorio local')
+    with ui.column().classes('pc-main'):
+        with ui.element('section').classes('pc-hero'):
+            with ui.element('div'):
+                ui.label('EL AGUA SE MUEVE. TÚ EXPERIMENTAS.').classes('pc-eyebrow')
+                ui.html('<h1>Pon tus ideas<br>a <span>fluir.</span></h1>')
+                ui.label('Cambia una variable. Descubre el equilibrio. '
+                         'Mira cómo una misma bomba cuenta dos historias distintas.').classes('pc-hero-copy')
+                with ui.element('div').classes('pc-methods'):
+                    for metodo in ('01 · Interpolación', '02 · Colebrook', '03 · Bisección'):
+                        ui.label(metodo)
+            with ui.element('div').classes('pc-hero-art').props('aria-hidden=true'):
+                ui.element('div').classes('pc-orbit')
+                ui.icon('water_drop', size='116px').classes('pc-hero-water')
+                ui.html('<div class="pc-hero-equation"><strong>v = Q / A</strong>'
+                        '<small>MÁS CAUDAL ≠ MÁS VELOCIDAD</small></div>')
+        with ui.card().classes('pc-panel pc-toolbar w-full'):
+            with ui.element('div').classes('pc-toolbar-main'):
+                ui.label('EXPERIMENTA').classes('pc-eyebrow')
+                selector = ui.toggle(['A', 'B'], value='A', on_change=
+                                     lambda e: cambiar_activo(e.value) if not restaurando else None).mark(
+                    'selector-escenario'
+                ).props('unelevated aria-label="Escenario activo"')
+                ui.button('Simular', icon='play_arrow', on_click=simular).classes('pc-action').props('unelevated')
+                ui.button('Copiar A en B', icon='content_copy', on_click=copiar).props('outline')
+                ui.button('Cargar caso base', icon='restart_alt', on_click=lambda: cargar_ejemplo()).props('flat')
+                ui.switch('Comparar A y B', on_change=lambda e: cambiar_comparacion(e.value))
+            with ui.element('div').classes('pc-example-row'):
+                ejemplo = ui.select(EJEMPLOS, label='Ejemplo', value='base').props('outlined dense')
+                ui.button('Cargar ejemplo', icon='science', on_click=lambda: cargar_ejemplo(ejemplo.value)).props('flat')
+                ui.label('Tres puntos de partida. Todas tus preguntas. Datos ficticios.').classes('pc-example-note')
+        with ui.element('div').classes('pc-lab'):
+            with ui.element('aside').classes('pc-config'):
+                with ui.card().classes('pc-panel w-full'):
+                    seccion('Instalación', 'Dale forma a tu experimento.', 'tune')
+                    ui.label('Acepta coma o punto decimal, sin separadores de miles.').classes('text-xs text-slate-600')
+                    with ui.element('div').classes('pc-input-grid'):
                         for clave, etiqueta in (
                             ('longitud_m', 'Longitud total L (m)'),
                             ('diametro_mm', 'Diámetro interno D (mm)'),
@@ -308,15 +324,26 @@ def construir_vista() -> None:
                         ):
                             entrada(clave, etiqueta, sesion.entradas[clave],
                                     lambda e, clave=clave: editar_instalacion(clave, e.value))
-                with ui.card().classes('w-full p-6 gap-3'):
-                    ui.label('Curva de la bomba').classes('text-xl font-semibold')
+                with ui.card().classes('pc-panel w-full'):
+                    seccion('Curva de la bomba', 'Los datos que ponen todo en marcha.', 'ssid_chart')
                     ui.label('De 3 a 10 puntos: caudal creciente y altura no creciente.').classes(
                         'text-sm text-slate-600'
                     )
                     tabla()
-            with ui.column().classes('w-full'):
+                with ui.card().classes('pc-panel pc-target w-full'):
+                    seccion('Una meta, dos escenarios', '¿Hasta dónde llega cada configuración?', 'flag')
+                    objetivo = ui.input('Caudal objetivo común (m³/h, opcional)', value=proyecto.objetivo_texto,
+                                        on_change=lambda e: cambiar_objetivo(e.value),
+                                        validation=lambda _: str(proyecto.error_objetivo)
+                                        if proyecto.error_objetivo else None).props('outlined inputmode=decimal').classes('w-full')
+                    metas()
+            with ui.element('section').classes('pc-stage'):
+                with ui.element('div').classes('pc-scenes') as vistas_escenas:
+                    for nombre, estado_sesion in proyecto.sesiones.items():
+                        escenas[nombre] = VistaAnimacion(estado_sesion, nombre)
+                        escenas[nombre].contenedor.set_visibility(nombre == 'A')
+                comparacion()
                 resultados()
-        ui.label(
-            'Modelo educativo de flujo estacionario. Los datos iniciales son de demostración. '
-            'Los resultados son estimaciones y no certifican una instalación real.'
-        ).classes('text-sm text-slate-600')
+        with ui.element('footer').classes('pc-footer'):
+            ui.html('<strong>PumpCalc</strong> · Entender el flujo cambia la perspectiva.')
+            ui.label('Modelo educativo · Niveles fijos · Los resultados no certifican una instalación real.')

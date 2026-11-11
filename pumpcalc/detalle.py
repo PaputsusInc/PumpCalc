@@ -26,7 +26,7 @@ def tabla_numerica(filas: list[dict], columnas: list[tuple[str, str]]) -> None:
 
 
 def mostrar_detalle(resultado: ResultadoOperacion) -> None:
-    with ui.expansion('Detalle numérico', icon='functions').classes('w-full'):
+    with ui.expansion('Detalle numérico', icon='functions').classes('pc-detail w-full'):
         ui.label('Bisección del balance de alturas').classes('text-lg font-semibold')
         ui.label('F(Q) = Hb(Q) − Hs(Q). El intervalo se registra antes de dividirlo.')
         solver = resultado.biseccion
