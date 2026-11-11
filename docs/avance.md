@@ -21,4 +21,26 @@ El servidor de comprobación se detiene al finalizar. Para abrirlo de nuevo, seg
 
 Archivos previstos para el commit de este paso: `.gitignore`, `requirements.txt`, `app.py`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`. La reorganización y actualización documental previa, incluida la corrección de estado en `docs/README.md`, se mantiene fuera del área de preparación para no mezclar ese trabajo pendiente con el paso 1.
 
-Commit propuesto: `chore: preparar la base local de PumpCalc`. No se crea hasta la siguiente instrucción del usuario según el plan. Al decir «sigamos», verificar el contenido preparado antes de registrar el commit y continuar únicamente con el paso 2, validación de entradas e interpolación de la bomba.
+Commit registrado: `db16710` (`preparar la base local de PumpCalc`). Al retomar se comprobó que contiene exactamente los cinco archivos verificados del paso 1. Ya estaba registrado y no se duplicó.
+
+## Paso 2 Validar entradas e interpolar la bomba
+
+Fecha: 10 de noviembre de 2026, America/Bogota.
+
+Resultado: `pumpcalc/entradas.py` define instalación, puntos, curva y escenario independientes de la interfaz, con objetos inmutables. Las funciones de entrada aceptan coma o punto decimal, distinguen campos vacíos de cero, rechazan datos no finitos y aplican los dominios de la sección 5. Las entradas visibles en mm y m³/h se convierten a m y m³/s. La meta opcional se valida por separado porque será común a A y B.
+
+`pumpcalc/interpolacion.py` implementa la interpolación lineal por tramos en Python, admite nodos y extremos y rechaza extrapolación. `pumpcalc/ejemplos.py` conserva la curva ficticia y construye una configuración base independiente en cada llamada, con los valores de la sección 8. Todavía no se conecta el motor con el formulario ni se calculan pérdidas o punto de operación.
+
+Comprobaciones realizadas con `.venv\Scripts\python.exe -m pytest`: **126 aprobadas y 1 módulo de pruebas omitido**. Las nuevas pruebas contienen 114 casos de validación, conversiones e interpolación; las 12 pruebas numéricas y de casos de uso heredados también pasan.
+
+- Reproducción exacta de los seis nodos, incluidos ambos extremos; interpolación de los cinco tramos y referencia de 28,5 m en 2,5 m³/h.
+- Dominio con caudal inicial positivo, tramo horizontal y rechazo de extrapolación y caudales no finitos.
+- Límites de longitud, diámetro, desnivel, rugosidad, K, puntos y meta; L ≥ Δz y ε/D ≤ 0,05, incluidas sus fronteras.
+- Entre 3 y 10 puntos; rechazo de duplicados, desorden y alturas crecientes sin alterar los datos de entrada.
+- Conversiones del ejemplo base, coma y punto decimal, objetivo vacío frente a cero, errores con identificación de campo y fila, e independencia de las configuraciones de ejemplo.
+
+La primera ejecución detectó que `tests/test_app.py`, de la interfaz de escritorio, impedía recoger las pruebas por la ausencia de CustomTkinter. Se conserva esa prueba y se añade una omisión explícita únicamente cuando falta esa dependencia heredada. No se omiten pruebas del motor nuevo. No cambió la interfaz web, por lo que este paso no requirió una nueva revisión en navegador.
+
+Archivos preparados para este paso: `pumpcalc/entradas.py`, `pumpcalc/interpolacion.py`, `pumpcalc/ejemplos.py`, `tests/test_entradas.py`, `tests/test_interpolacion.py`, `tests/test_app.py`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`. Las fuentes y la reorganización documental previa permanecen fuera de este commit.
+
+Commit propuesto: `feat: validar entradas e interpolar la curva de la bomba`. Pendiente de registrar al decir «sigamos», previa revisión de que no haya cambiado el contenido preparado. El siguiente paso es el 3, fricción y pérdidas hidráulicas.

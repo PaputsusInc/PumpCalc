@@ -24,10 +24,10 @@ Si prefieres activar el entorno:
 python app.py
 ```
 
-Las pruebas numéricas de la nueva línea base comienzan en el paso 2. Su comando será:
+Desde el paso 2, las pruebas de validación e interpolación de la nueva línea base se ejecutan con:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Los tests heredados todavía corresponden a la versión anterior y no acreditan el modelo nuevo. Las comprobaciones efectivamente realizadas se registran en [avance.md](avance.md). El alcance final se describe en [README.md](README.md) y el orden de trabajo en el [plan de desarrollo](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md).
+Las pruebas numéricas heredadas se conservan como comprobación de la versión anterior. La prueba de interfaz de escritorio se omite explícitamente si no está instalado CustomTkinter, que no forma parte de las dependencias de la aplicación web. Esa omisión no corresponde a la interfaz NiceGUI. Las comprobaciones efectivamente realizadas se registran en [avance.md](avance.md). El alcance final se describe en [README.md](README.md) y el orden de trabajo en el [plan de desarrollo](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md).
