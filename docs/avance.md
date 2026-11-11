@@ -43,4 +43,26 @@ La primera ejecución detectó que `tests/test_app.py`, de la interfaz de escrit
 
 Archivos preparados para este paso: `pumpcalc/entradas.py`, `pumpcalc/interpolacion.py`, `pumpcalc/ejemplos.py`, `tests/test_entradas.py`, `tests/test_interpolacion.py`, `tests/test_app.py`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`. Las fuentes y la reorganización documental previa permanecen fuera de este commit.
 
-Commit propuesto: `feat: validar entradas e interpolar la curva de la bomba`. Pendiente de registrar al decir «sigamos», previa revisión de que no haya cambiado el contenido preparado. El siguiente paso es el 3, fricción y pérdidas hidráulicas.
+Commit registrado: `f7236f1` (`feat: validar entradas e interpolar la curva de la bomba`). Al retomar el paso 3 ya estaba registrado y el árbol de trabajo estaba limpio; no se duplicó. Ese commit incluye también la reorganización documental y los archivos de `Baseline y pasos` que anteriormente permanecían pendientes.
+
+## Paso 3 Calcular las pérdidas hidráulicas
+
+Fecha: 10 de noviembre de 2026, America/Bogota.
+
+Resultado: `pumpcalc/friccion.py` implementa el factor de Darcy con f = 64/Re en flujo laminar, interpolación didáctica en transición y Colebrook por punto fijo en turbulencia. Se inicia con x₀ = 1/√0,02, con límite de 100 iteraciones y parada que exige simultáneamente cambio y residuo absolutos ≤ 10⁻¹⁰. Cada iteración conserva x anterior, x nuevo, cambio y residuo. En transición la traza identifica el cálculo auxiliar en Re = 4000 y se devuelve una advertencia de aproximación.
+
+`pumpcalc/perdidas.py` calcula área, velocidad, Reynolds, pérdidas en tubería y accesorios y Hs = Δz + hf + hK. Usa g = 9,81 m/s² y ν = 1,004 × 10⁻⁶ m²/s. En Q = 0 no evalúa fricción: v, Re y pérdidas son cero, Hs = Δz y f es no aplicable. Los fallos de Colebrook se propagan como `ErrorConvergencia`, sin sustituir el factor por una aproximación silenciosa.
+
+Comprobaciones realizadas con `.venv\Scripts\python.exe -m pytest`: **170 aprobadas y 1 módulo heredado de interfaz omitido** por ausencia de CustomTkinter. Las 44 pruebas nuevas de fricción y pérdidas verifican:
+
+- f = 0,064 en Re = 1000 y f ≈ 0,018513866077 en Re = 100000, ε/D = 0,0001, con error absoluto ≤ 10⁻⁹.
+- Convergencia en los extremos del dominio turbulento del sandbox, para ε/D = 0 y 0,05; iterados entre 3 y 20 y ambos criterios de parada satisfechos.
+- Continuidad del factor y de Hs en Re = 2000 y 4000; traza auxiliar y advertencia en transición.
+- Caudal cero sin llamar a fricción, pérdida laminar contrastada con Poiseuille, participación de longitud, rugosidad, diámetro y K sin coeficientes ocultos.
+- Falta de convergencia forzada con una iteración, tanto en transición como en turbulencia, y propagación del fallo al evaluar el sistema.
+
+Evaluación observada para el caso base al caudal tabulado Q = 3,765443 m³/h: v = 2,130804858 m/s, Re = 53057,889896, f = 0,020839985678, hf = 7,716240448 m, hK = 0,925653281 m y Hs = 20,641893730 m. Colebrook empleó 11 iteraciones; cambio final ≈ 9,47 × 10⁻¹¹ y residuo ≈ −1,13 × 10⁻¹¹. Reynolds se compara con el valor aproximado 53057,90 de la fuente con tolerancia absoluta de 0,02; los valores de Q y las referencias están redondeados. Aquí se evalúa un caudal suministrado: la búsqueda del punto de operación corresponde al paso 4.
+
+Archivos preparados: `pumpcalc/friccion.py`, `pumpcalc/perdidas.py`, `tests/test_friccion.py`, `tests/test_perdidas.py` y `docs/avance.md`. No cambió la interfaz web, por lo que no fue necesaria una nueva revisión en navegador.
+
+Commit propuesto: `feat: calcular fricción y pérdidas hidráulicas`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. El siguiente paso es el 4, resolver y verificar el punto de operación por bisección.
