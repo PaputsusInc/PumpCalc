@@ -3,6 +3,7 @@
 from nicegui import context, ui
 
 from pumpcalc.detalle import mostrar_detalle
+from pumpcalc.escena import VistaAnimacion
 from pumpcalc.friccion import ErrorConvergencia
 from pumpcalc.presentacion import opciones_curvas
 from pumpcalc.simulacion import SesionSimulacion
@@ -32,6 +33,7 @@ def construir_vista() -> None:
     campos: dict[str, ui.input] = {}
     temporizador = None
     restaurando = False
+    escena: VistaAnimacion | None = None
 
     def error_campo(clave: str) -> str | None:
         return str(sesion.error) if sesion.error is not None and sesion.error.campo == clave else None
@@ -39,6 +41,8 @@ def construir_vista() -> None:
     def actualizar() -> None:
         for entrada in campos.values():
             entrada.validate()
+        if escena is not None:
+            escena.actualizar()
         resultados.refresh()
 
     def cancelar_temporizador() -> None:
@@ -214,6 +218,7 @@ def construir_vista() -> None:
             ui.button('Simular', icon='play_arrow', on_click=simular)
             ui.button('Cargar caso base', icon='restart_alt', on_click=cargar_base).props('outline')
             ui.label('Ejemplo ficticio · Escenario A').classes('text-sm text-slate-600')
+        escena = VistaAnimacion(sesion)
         with ui.element('div').classes('grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start'):
             with ui.column().classes('w-full gap-6'):
                 with ui.card().classes('w-full p-6 gap-4'):

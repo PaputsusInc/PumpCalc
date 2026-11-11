@@ -132,4 +132,29 @@ Comprobaciones realizadas:
 
 Archivos preparados: `pumpcalc/vista.py`, `pumpcalc/presentacion.py`, `pumpcalc/detalle.py`, `tests/test_presentacion.py`, `tests/test_vista.py`, `docs/README.md`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`.
 
-Commit propuesto: `feat: mostrar las curvas y el detalle numérico`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. La siguiente implementación es el paso 7, animar el agua según la velocidad calculada. La comprobación visual pendiente debe retomarse cuando esté disponible el navegador.
+Commit registrado: `a5952b9` (`curvas, marcador del punto de operación y detalle de bisección y colebrook`). Al retomar el paso 7 ya estaba registrado y el árbol de trabajo estaba limpio; no se duplicó. La comprobación visual pendiente debe retomarse cuando esté disponible el navegador.
+
+## Paso 7 Animar el agua en la instalación
+
+Fecha: 10 de noviembre de 2026, America/Bogota.
+
+Estado: implementación y verificación automatizada completas; revisión visual en navegador real pendiente por indisponibilidad del host de acceso al navegador integrado.
+
+Resultado: `pumpcalc/animacion.py` genera un esquema SVG con depósitos de niveles fijos, bomba y tubería llena. Las etiquetas incluyen L, D, Δz, Q y v. El grosor aumenta con el diámetro mediante una escala visual creciente; el esquema declara que no está a escala geométrica. Las 16 trazas siguen la línea de tubería desde origen a destino y retornan al comienzo del recorrido. Su avance usa el tiempo real transcurrido y s(v) = 240v/(v+2), común a todas las configuraciones, con v calculada por el motor.
+
+`pumpcalc/escena.py` incorpora `ui.interactive_image` con fondo SVG de instalación y una capa de trazas. Un `ui.timer` a 30 actualizaciones por segundo cambia únicamente el contenido de las trazas; no recalcula la hidráulica ni reconstruye las curvas o el formulario. Cambiar las entradas actualiza la escena con el resultado vigente y suspende el movimiento mientras esté pendiente o sea inválido, sin cruce o sin convergencia. Una solución válida con Q = 0 permanece sin movimiento y conserva ese significado. Pausar y reanudar afecta solo al estado visual, sin cambiar el punto de operación ni acumular desplazamiento durante la pausa.
+
+Comprobaciones realizadas:
+
+- `.venv\Scripts\python.exe -m pytest`: **259 aprobadas y 1 módulo heredado de interfaz omitido** por ausencia de CustomTkinter. Se añadieron 22 casos de escala, geometría y movimiento y 2 recorridos de integración con el simulador oficial de NiceGUI.
+- Se comprobaron s(0) = 0, monotonía y límite visual, equivalencia de avance para distintos tamaños de fotograma, pausa y reanudación, suspensión en los cuatro estados sin solución vigente, solución válida en Q = 0 y recorrido de las trazas por ambos codos.
+- Se verificó que el fondo contiene las etiquetas del resultado y mantiene los niveles de los depósitos, que la capa móvil solo contiene trazas y que los fotogramas cambian esa capa sin modificar el fondo ni recrear la gráfica.
+- Para A se observaron v = 2,130808550 m/s, s = 123,799988746 px/s y grosor = 23,863137139 px. Con D = 32 mm se observaron v = 1,513406017 m/s, s = 103,380435472 px/s y grosor = 28,136862861 px. La tubería aumenta su grosor y el avance visual disminuye mientras Q aumenta, con la misma escala para ambos casos.
+- Las pruebas de integración verificaron pausa sin cambiar Q, reanudación, suspensión por dato inválido, cálculo pendiente y falta de cruce, y actualización de Q, v y D sin recrear la imagen.
+- `.venv\Scripts\python.exe -m py_compile pumpcalc/animacion.py pumpcalc/escena.py pumpcalc/vista.py`: sin errores.
+- La aplicación inició mediante `python app.py`; la respuesta HTTP de `/` tuvo estado 200 y contenía escena, Pausar animación, Movimiento ilustrativo y resultado base. El servidor de comprobación se detuvo al finalizar.
+- El intento de abrir la vista local en el navegador integrado devolvió `The browser access host is unavailable`. No se declara comprobado visualmente el movimiento, el grosor o la disposición en un navegador real.
+
+Archivos preparados: `pumpcalc/animacion.py`, `pumpcalc/escena.py`, `pumpcalc/vista.py`, `tests/test_animacion.py`, `tests/test_escena.py`, `docs/README.md`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`.
+
+Commit propuesto: `feat: animar el flujo de agua según la velocidad calculada`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. La siguiente implementación es el paso 8, comparación de escenarios y evaluación del caudal objetivo. La comprobación visual pendiente debe retomarse cuando esté disponible el navegador.

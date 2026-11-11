@@ -1,8 +1,10 @@
 # Instalación y arranque local de PumpCalc
 
-La aplicación usa NiceGUI y el motor hidráulico verificado. Hasta el paso 6 incorpora formulario, resultados, curvas y detalle numérico de un escenario. Los eventos y componentes se comprueban con el simulador oficial de NiceGUI; la revisión visual en un navegador real sigue pendiente, como se registra en [avance.md](avance.md). La animación y la comparación se incorporan en los pasos 7 y 8. El código anterior de escritorio se conserva como antecedente; `main.py` no es la entrada de la nueva aplicación y sus dependencias no forman parte del nuevo entorno.
+La aplicación usa NiceGUI y el motor hidráulico verificado. Hasta el paso 7 incorpora formulario, resultados, curvas, detalle numérico y animación de un escenario. Los eventos y componentes se comprueban con el simulador oficial de NiceGUI; la revisión visual en un navegador real sigue pendiente, como se registra en [avance.md](avance.md). La comparación A/B se incorpora en el paso 8. El código anterior de escritorio se conserva como antecedente; `main.py` no es la entrada de la nueva aplicación y sus dependencias no forman parte del nuevo entorno.
 
 ## Entorno
+
+Al iniciar se calcula el caso base y se actualizan sus trazas de agua según la velocidad del motor. **Pausar animación** detiene solo el movimiento; **Reanudar animación** lo continúa. Editar invalida el resultado y suspende las trazas hasta recalcular. Una configuración sin cruce muestra la instalación detenida y su aviso.
 
 - Python 3.13.7 en Windows.
 - NiceGUI 4.0.0 y pytest 9.2.0, fijados en `requirements.txt`.
