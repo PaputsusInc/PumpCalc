@@ -7,9 +7,9 @@ Fuentes de verdad: [propuesta v4](../Baseline%20y%20pasos/PumpCalc%20propuesta%2
 
 ## Estado del repositorio y de esta documentación
 
-Los documentos de esta carpeta describen la especificación vigente. La aplicación [app.py](../app.py) incorpora el motor de cálculo, el formulario de un escenario, las curvas, el detalle numérico y la animación 2D hasta el paso 7. Usa NiceGUI 4.0.0 y pytest 9.2.0, fijados en [requirements.txt](../requirements.txt), con Python 3.13.7 en Windows. La guía de arranque está en [Instalación local](INSTALACION_LOCAL.md) y las comprobaciones reales y la revisión visual pendiente en [avance](avance.md).
+Los documentos de esta carpeta describen la especificación vigente. La aplicación [app.py](../app.py) incorpora el motor de cálculo, los escenarios A/B independientes, las curvas, el detalle numérico, la animación 2D y la meta común hasta el paso 8. Usa NiceGUI 4.0.0 y pytest 9.2.0, fijados en [requirements.txt](../requirements.txt), con Python 3.13.7 en Windows. La guía de arranque está en [Instalación local](INSTALACION_LOCAL.md) y las comprobaciones reales y la revisión visual pendiente en [avance](avance.md).
 
-El código anterior se conserva: [main.py](../main.py) inicia CustomTkinter, [hydraulics.py](../pumpcalc/hydraulics.py) usa Hazen–Williams y [persistencia.py](../pumpcalc/persistencia.py) usa SQLite. La aplicación web utiliza los módulos nuevos de validación, interpolación, fricción, pérdidas y bisección. La animación puede pausarse y se suspende si no hay un resultado vigente; la comparación A/B corresponde al paso 8. Las dependencias de la aplicación antigua no forman parte del nuevo entorno.
+El código anterior se conserva: [main.py](../main.py) inicia CustomTkinter, [hydraulics.py](../pumpcalc/hydraulics.py) usa Hazen–Williams y [persistencia.py](../pumpcalc/persistencia.py) usa SQLite. La aplicación web utiliza los módulos nuevos de validación, interpolación, fricción, pérdidas y bisección. Permite copiar A en B, cargar tres ejemplos en el escenario activo y comparar resultados y animaciones con una escala común. La meta solo cambia su evaluación. El cierre de instalación limpia y sustentación corresponde al paso 9; las dependencias de la aplicación antigua no forman parte del nuevo entorno.
 
 ## Instalación y ejecución local
 

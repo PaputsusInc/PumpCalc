@@ -71,3 +71,29 @@ def filas_colebrook(resultado: ResultadoOperacion) -> list[dict]:
          'cambio': paso.cambio, 'residuo': paso.residuo}
         for paso in resultado.punto.sistema.friccion.colebrook.traza
     ]
+
+
+def opciones_comparacion(casos: dict[str, tuple[Escenario, ResultadoOperacion]]) -> dict:
+    """Superpone casos vigentes, conservando el dominio propio de cada serie."""
+    if not casos:
+        raise ValueError('No hay curvas vigentes para comparar.')
+    series = []
+    dominios = []
+    opciones = None
+    for nombre, (escenario, resultado) in casos.items():
+        actuales = opciones_curvas(escenario, resultado)
+        if opciones is None:
+            opciones = actuales
+        dominios.append(escenario.curva.dominio_m3s)
+        color = '#036b80' if nombre == 'A' else '#7e22ce'
+        for serie in actuales['series']:
+            serie['name'] += f' ({nombre})'
+            if serie['type'] == 'line':
+                serie['lineStyle']['color'] = color
+            else:
+                serie['itemStyle']['color'] = color
+            series.append(serie)
+    opciones['series'] = series
+    opciones['xAxis']['min'] = min(a for a, _ in dominios) * 3600
+    opciones['xAxis']['max'] = max(b for _, b in dominios) * 3600
+    return opciones

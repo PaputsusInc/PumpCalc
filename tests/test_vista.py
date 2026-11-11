@@ -82,6 +82,7 @@ def test_tabla_edita_agrega_y_quita_filas_y_actualiza_el_dominio(caplog):
             (grafica,) = user.find(ui.echart).elements
             assert grafica.options['xAxis']['max'] == 5
             user.find('Cargar caso base').click()
+            await asyncio.sleep(0.01)  # Espera la sustitución de las filas del ejemplo.
             (q2,) = user.find(kind=ui.input, content='Caudal del punto 2').elements
             with user:
                 q2.set_value('0')

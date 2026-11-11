@@ -157,4 +157,30 @@ Comprobaciones realizadas:
 
 Archivos preparados: `pumpcalc/animacion.py`, `pumpcalc/escena.py`, `pumpcalc/vista.py`, `tests/test_animacion.py`, `tests/test_escena.py`, `docs/README.md`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`.
 
-Commit propuesto: `feat: animar el flujo de agua según la velocidad calculada`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. La siguiente implementación es el paso 8, comparación de escenarios y evaluación del caudal objetivo. La comprobación visual pendiente debe retomarse cuando esté disponible el navegador.
+Commit registrado: `80ad072` (`feat: animar el flujo de agua según la velocidad calculada`). Al retomar el paso 8 ya estaba registrado; no se duplicó. La comprobación visual pendiente debe retomarse cuando esté disponible el navegador.
+
+## Paso 8 Comparar escenarios y probar una meta
+
+Fecha: 11 de noviembre de 2026, America/Bogota.
+
+Estado: implementación y verificación automatizada completas; revisión visual en navegador real pendiente por indisponibilidad del host de acceso al navegador integrado.
+
+Resultado: `pumpcalc/comparacion.py` conserva sesiones A y B independientes en memoria y una meta opcional común. Copiar A en B duplica entradas, estado, resultado y trazas; cada edición invalida únicamente su escenario. Los temporizadores capturan el escenario y su revisión, de modo que cambiar el selector no desvía un cálculo pendiente hacia otro caso. Recargar la página crea de nuevo las dos configuraciones base y la meta de 4 m³/h.
+
+La vista permite seleccionar A o B, copiar A en B y cargar caso base, diámetro de 32 mm o ausencia de intersección en el activo. La comparación muestra dos escenas con la misma escala de velocidad y grosor, una tabla de entradas y resultados y curvas superpuestas con dominios propios. Presenta cambio B − A, diferencia absoluta y porcentaje respecto de A; si Q de A es cero el porcentaje es no aplicable. Si faltan resultados vigentes no inventa una comparación numérica ni un marcador.
+
+La meta se valida aparte. Su margen es Q − objetivo y se compara con la cota numérica del solver para distinguir En el límite numérico, Alcanza la meta en el modelo y No alcanza la meta en el modelo. Editar únicamente el objetivo no modifica entradas, revisiones, resultados, escenas ni curvas; solo actualiza la evaluación y sus mensajes. Una meta vacía significa ausencia de referencia y una meta inválida se señala junto al campo.
+
+Comprobaciones realizadas:
+
+- `.venv\Scripts\python.exe -m pytest`: **282 aprobadas y 1 módulo heredado de interfaz omitido** por ausencia de CustomTkinter. Se añadieron 20 casos del modelo y la gráfica de comparación y 3 recorridos del simulador oficial de NiceGUI.
+- Las pruebas verifican copias independientes de entradas, filas, resultados y trazas; edición de B con A intacto; tres ejemplos solo en el activo; meta opcional e inválida; márgenes dentro de la cota; ausencia de comparación para estados sin resultado; porcentaje no aplicable con Q de A cero; dominios propios y marcadores solo donde hay solución.
+- Los recorridos simulados verifican copiar A, editar D de B a 32 mm, comparar dos escenas y ocho series, cambiar la meta sin recrear la gráfica o las imágenes, pausar A sin detener B, cargar en B el ejemplo sin cruce, recargar la página y cambiar de activo durante un cálculo pendiente. No se registraron errores de NiceGUI.
+- Con la meta de 4 m³/h, A mostró margen −0,234550476 m³/h y B margen +0,381752014 m³/h. El cambio B − A fue +0,616302490 m³/h, equivalente a +16,367301867 % respecto de A. A no alcanza la meta y B sí.
+- Compilación de los siete módulos modificados o añadidos de aplicación con `python -m py_compile`: sin errores.
+- La aplicación inició con `python app.py`; la solicitud HTTP a `/` devolvió estado 200 y los controles A/B, meta, ejemplo y resultado base. El servidor de comprobación se detuvo al finalizar.
+- El intento de abrir la aplicación en el navegador integrado devolvió `The browser access host is unavailable`. Las comprobaciones del usuario simulado no sustituyen la revisión visual de la comparación animada en un navegador real.
+
+Archivos preparados: `pumpcalc/comparacion.py`, `pumpcalc/panel_comparacion.py`, `pumpcalc/ejemplos.py`, `pumpcalc/escena.py`, `pumpcalc/presentacion.py`, `pumpcalc/simulacion.py`, `pumpcalc/vista.py`, `tests/test_comparacion.py`, `tests/test_vista_comparacion.py`, `tests/test_vista.py`, `docs/README.md`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`. Los cambios ajenos al desarrollo de PumpCalc se conservan fuera del commit.
+
+Commit propuesto: `feat: comparar escenarios y evaluar el caudal objetivo`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. El siguiente paso es el 9, instalación limpia, verificación de entrega y guía de sustentación, incluyendo retomar la revisión visual pendiente cuando esté disponible.

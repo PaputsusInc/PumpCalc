@@ -1,10 +1,12 @@
 # Instalación y arranque local de PumpCalc
 
-La aplicación usa NiceGUI y el motor hidráulico verificado. Hasta el paso 7 incorpora formulario, resultados, curvas, detalle numérico y animación de un escenario. Los eventos y componentes se comprueban con el simulador oficial de NiceGUI; la revisión visual en un navegador real sigue pendiente, como se registra en [avance.md](avance.md). La comparación A/B se incorpora en el paso 8. El código anterior de escritorio se conserva como antecedente; `main.py` no es la entrada de la nueva aplicación y sus dependencias no forman parte del nuevo entorno.
+La aplicación usa NiceGUI y el motor hidráulico verificado. Hasta el paso 8 incorpora escenarios A/B independientes, resultados, curvas, detalle numérico, animaciones y meta común. Los eventos y componentes se comprueban con el simulador oficial de NiceGUI; la revisión visual en un navegador real sigue pendiente, como se registra en [avance.md](avance.md). El código anterior de escritorio se conserva como antecedente; `main.py` no es la entrada de la nueva aplicación y sus dependencias no forman parte del nuevo entorno.
 
 ## Entorno
 
 Al iniciar se calcula el caso base y se actualizan sus trazas de agua según la velocidad del motor. **Pausar animación** detiene solo el movimiento; **Reanudar animación** lo continúa. Editar invalida el resultado y suspende las trazas hasta recalcular. Una configuración sin cruce muestra la instalación detenida y su aviso.
+
+Selecciona **A** o **B** para editar; **Copiar A en B** crea una copia independiente y abre B. Elige un ejemplo y pulsa **Cargar ejemplo** para aplicarlo solo al activo. **Comparar A y B** muestra ambas escenas, sus datos y las curvas superpuestas. La meta de caudal es opcional y común; muestra el margen y distingue cumplimiento, incumplimiento y límite numérico, sin cambiar el punto de operación. Recargar la página restaura ambos casos base y la meta de demostración de 4 m³/h.
 
 - Python 3.13.7 en Windows.
 - NiceGUI 4.0.0 y pytest 9.2.0, fijados en `requirements.txt`.

@@ -1,6 +1,8 @@
 """Estado de un formulario de simulación, independiente de los controles UI."""
 
-from pumpcalc.ejemplos import CURVA_DEMOSTRACION, caso_base
+from copy import deepcopy
+
+from pumpcalc.ejemplos import caso_base
 from pumpcalc.entradas import ErrorEntrada, Escenario, validar_curva, validar_instalacion
 from pumpcalc.operacion import ResultadoOperacion, resolver_operacion
 
@@ -15,7 +17,10 @@ class SesionSimulacion:
         self.cargar_base()
 
     def cargar_base(self) -> None:
-        instalacion = caso_base().instalacion
+        self.cargar_escenario(caso_base())
+
+    def cargar_escenario(self, escenario: Escenario) -> None:
+        instalacion = escenario.instalacion
         self.entradas = {
             'longitud_m': f'{instalacion.longitud_m:g}',
             'diametro_mm': f'{instalacion.diametro_m * 1000:g}',
@@ -23,8 +28,19 @@ class SesionSimulacion:
             'rugosidad_mm': f'{instalacion.rugosidad_m * 1000:g}',
             'k_total': f'{instalacion.k_total:g}',
         }
-        self.puntos = [[str(q), str(h)] for q, h in CURVA_DEMOSTRACION]
+        self.puntos = [[f'{p.caudal_m3s * 3600:.12g}', f'{p.altura_m:.12g}']
+                       for p in escenario.curva.puntos]
         self.preparar()
+
+    def copiar(self) -> 'SesionSimulacion':
+        copia = SesionSimulacion()
+        copia.entradas = self.entradas.copy()
+        copia.puntos = [fila.copy() for fila in self.puntos]
+        copia.preparar()
+        if self.resultado is not None:
+            copia.resultado = deepcopy(self.resultado)
+            copia.estado = self.estado
+        return copia
 
     def preparar(self) -> None:
         """Retira inmediatamente cualquier resultado de las entradas anteriores."""

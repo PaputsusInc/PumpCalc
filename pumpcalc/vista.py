@@ -3,10 +3,12 @@
 from nicegui import context, ui
 
 from pumpcalc.detalle import mostrar_detalle
+from pumpcalc.comparacion import ComparacionEscenarios, MENSAJES_META
+from pumpcalc.ejemplos import EJEMPLOS
 from pumpcalc.escena import VistaAnimacion
 from pumpcalc.friccion import ErrorConvergencia
 from pumpcalc.presentacion import opciones_curvas
-from pumpcalc.simulacion import SesionSimulacion
+from pumpcalc.panel_comparacion import mostrar_comparacion
 
 
 ESTADOS = {
@@ -28,12 +30,12 @@ def numero(valor: float, decimales: int = 6) -> str:
 
 def construir_vista() -> None:
     cliente = context.client
-    sesion = SesionSimulacion()
-    sesion.simular()
+    proyecto = ComparacionEscenarios()
+    sesion = proyecto.sesiones['A']
     campos: dict[str, ui.input] = {}
-    temporizador = None
+    temporizadores = {}
     restaurando = False
-    escena: VistaAnimacion | None = None
+    escenas: dict[str, VistaAnimacion] = {}
 
     def error_campo(clave: str) -> str | None:
         return str(sesion.error) if sesion.error is not None and sesion.error.campo == clave else None
@@ -41,34 +43,42 @@ def construir_vista() -> None:
     def actualizar() -> None:
         for entrada in campos.values():
             entrada.validate()
-        if escena is not None:
+        if proyecto.comparando:
+            vistas_escenas.classes(add='md:grid-cols-2')
+        else:
+            vistas_escenas.classes(remove='md:grid-cols-2')
+        for nombre, escena in escenas.items():
+            escena.sesion = proyecto.sesiones[nombre]
+            escena.contenedor.set_visibility(proyecto.comparando or nombre == proyecto.activo)
             escena.actualizar()
+        metas.refresh()
+        comparacion.refresh()
         resultados.refresh()
 
-    def cancelar_temporizador() -> None:
-        nonlocal temporizador
+    def cancelar_temporizador(nombre: str | None = None) -> None:
+        temporizador = temporizadores.pop(nombre or proyecto.activo, None)
         if temporizador is not None:
             temporizador.cancel()
             temporizador.delete()
-            temporizador = None
 
     def programar() -> None:
-        nonlocal temporizador
         cancelar_temporizador()
         actualizar()
         if sesion.estado == 'pendiente':
+            nombre = proyecto.activo
+            sesion_programada = sesion
             revision = sesion.revision
 
             def recalcular() -> None:
-                nonlocal temporizador
-                temporizador = None
-                if sesion.simular_revision(revision):
+                temporizadores.pop(nombre, None)
+                if (proyecto.sesiones[nombre] is sesion_programada
+                        and sesion_programada.simular_revision(revision)):
                     actualizar()
 
             # La fila que originó el evento puede desaparecer al refrescar la
             # tabla. El temporizador pertenece a la página, no a esa fila.
             with cliente:
-                temporizador = ui.timer(0.2, recalcular, once=True)
+                temporizadores[nombre] = ui.timer(0.2, recalcular, once=True)
 
     def editar_instalacion(clave: str, valor: str) -> None:
         if not restaurando:
@@ -84,18 +94,61 @@ def construir_vista() -> None:
         sesion.simular()
         actualizar()
 
-    def cargar_base() -> None:
+    async def reflejar_sesion() -> None:
         nonlocal restaurando
-        cancelar_temporizador()
-        sesion.cargar_base()
         restaurando = True
         try:
+            selector.set_value(proyecto.activo)
             for clave, valor in sesion.entradas.items():
                 campos[clave].set_value(valor)
-            tabla.refresh()
+            await tabla.refresh()
         finally:
             restaurando = False
-        simular()
+
+    async def cambiar_activo(nombre: str) -> None:
+        nonlocal sesion
+        proyecto.seleccionar(nombre)
+        sesion = proyecto.sesiones[nombre]
+        await reflejar_sesion()
+        actualizar()
+
+    async def cargar_ejemplo(nombre: str = 'base') -> None:
+        cancelar_temporizador()
+        proyecto.cargar_ejemplo(nombre)
+        await reflejar_sesion()
+        actualizar()
+
+    async def copiar() -> None:
+        cancelar_temporizador('B')
+        proyecto.copiar_a_b()
+        escenas['B'].movimiento.fase_px = escenas['A'].movimiento.fase_px
+        escenas['B'].movimiento.pausada = escenas['A'].movimiento.pausada
+        await cambiar_activo('B')
+        if sesion.estado == 'pendiente':
+            programar()
+
+    def cambiar_comparacion(valor: bool) -> None:
+        proyecto.comparando = bool(valor)
+        actualizar()
+
+    def cambiar_objetivo(valor: str) -> None:
+        proyecto.establecer_objetivo(valor)
+        objetivo.validate()
+        metas.refresh()
+
+    @ui.refreshable
+    def metas() -> None:
+        for nombre in proyecto.sesiones:
+            evaluacion = proyecto.evaluar_meta(nombre)
+            ui.label(f'{nombre}: {MENSAJES_META[evaluacion.estado]}')
+            if evaluacion.margen_m3s is not None:
+                ui.label(f'Margen {nombre}: {numero(evaluacion.margen_m3s * 3600)} m³/h').classes(
+                    'text-sm text-slate-600'
+                )
+
+    @ui.refreshable
+    def comparacion() -> None:
+        mostrar_comparacion(proyecto)
 
     async def agregar() -> None:
         if sesion.agregar_punto():
@@ -155,7 +208,7 @@ def construir_vista() -> None:
     @ui.refreshable
     def resultados() -> None:
         with ui.card().classes('w-full p-6 gap-4'):
-            ui.label('Resultados · Escenario A').classes('text-xl font-semibold')
+            ui.label(f'Resultados · Escenario {proyecto.activo}').classes('text-xl font-semibold')
             ui.label(ESTADOS[sesion.estado]).classes('text-lg font-medium').props(
                 'role=status aria-live=polite'
             )
@@ -190,7 +243,7 @@ def construir_vista() -> None:
                     ui.label('H representa altura de energía, no una presión medida.').classes(
                         'text-sm text-slate-600'
                     )
-                if sesion.escenario is not None:
+                if sesion.escenario is not None and not proyecto.comparando:
                     ui.separator()
                     ui.label('Curvas de bomba y sistema').classes('text-lg font-semibold')
                     try:
@@ -215,10 +268,29 @@ def construir_vista() -> None:
             'text-lg text-slate-600'
         )
         with ui.row().classes('items-center gap-3'):
+            selector = ui.toggle(['A', 'B'], value='A', on_change=
+                                 lambda e: cambiar_activo(e.value) if not restaurando else None).mark(
+                'selector-escenario'
+            )
             ui.button('Simular', icon='play_arrow', on_click=simular)
-            ui.button('Cargar caso base', icon='restart_alt', on_click=cargar_base).props('outline')
-            ui.label('Ejemplo ficticio · Escenario A').classes('text-sm text-slate-600')
-        escena = VistaAnimacion(sesion)
+            ui.button('Cargar caso base', icon='restart_alt', on_click=lambda: cargar_ejemplo()).props('outline')
+            ui.button('Copiar A en B', icon='content_copy', on_click=copiar).props('outline')
+            ui.switch('Comparar A y B', on_change=lambda e: cambiar_comparacion(e.value))
+        with ui.row().classes('w-full items-center gap-3'):
+            ejemplo = ui.select(EJEMPLOS, label='Ejemplo', value='base').classes('w-60')
+            ui.button('Cargar ejemplo', on_click=lambda: cargar_ejemplo(ejemplo.value)).props('outline')
+            ui.label('Los ejemplos se cargan en el escenario activo y usan datos ficticios.').classes('text-sm')
+        with ui.card().classes('w-full p-4'):
+            objetivo = ui.input('Caudal objetivo común (m³/h, opcional)', value=proyecto.objetivo_texto,
+                                on_change=lambda e: cambiar_objetivo(e.value),
+                                validation=lambda _: str(proyecto.error_objetivo)
+                                if proyecto.error_objetivo else None).props('outlined inputmode=decimal')
+            metas()
+        with ui.element('div').classes('grid grid-cols-1 gap-4 w-full') as vistas_escenas:
+            for nombre, estado_sesion in proyecto.sesiones.items():
+                escenas[nombre] = VistaAnimacion(estado_sesion, nombre)
+                escenas[nombre].contenedor.set_visibility(nombre == 'A')
+        comparacion()
         with ui.element('div').classes('grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start'):
             with ui.column().classes('w-full gap-6'):
                 with ui.card().classes('w-full p-6 gap-4'):

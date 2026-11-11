@@ -12,15 +12,16 @@ from pumpcalc.simulacion import SesionSimulacion
 
 
 class VistaAnimacion:
-    def __init__(self, sesion: SesionSimulacion) -> None:
+    def __init__(self, sesion: SesionSimulacion, nombre: str = 'A') -> None:
         self.sesion = sesion
         self.movimiento = MovimientoFlujo()
         self.ultimo_fotograma = perf_counter()
         self.grosor = 24.0
         self.fondo = ''
-        with ui.card().classes('w-full p-5 gap-3'):
+        self.contenedor = ui.card().classes('w-full p-5 gap-3').mark(f'escena-{nombre}')
+        with self.contenedor:
             with ui.row().classes('items-center justify-between w-full'):
-                ui.label('Agua en la instalación').classes('text-xl font-semibold')
+                ui.label(f'Escenario {nombre} · Agua en la instalación').classes('text-xl font-semibold')
                 self.boton = ui.button('Pausar animación', icon='pause', on_click=self.alternar).props('outline')
             self.estado = ui.label().classes('text-sm text-slate-600').props('role=status aria-live=polite')
             self.imagen = ui.interactive_image(size=(ANCHO_ESCENA, ALTO_ESCENA)).classes(
@@ -72,6 +73,8 @@ class VistaAnimacion:
         ahora = perf_counter()
         segundos = ahora - self.ultimo_fotograma
         self.ultimo_fotograma = ahora
+        if not self.contenedor.visible:
+            return
         # Consulta siempre el estado vigente, incluso durante refrescos asíncronos.
         self.movimiento.sincronizar(self.sesion.estado, self.sesion.resultado)
         if self.movimiento.avanzar(segundos):
