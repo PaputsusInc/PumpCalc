@@ -90,4 +90,21 @@ Los tres puntos cumplen errores absolutos máximos de 0,001 m³/h en Q y 0,001 m
 
 Archivos preparados: `pumpcalc/biseccion.py`, `pumpcalc/operacion.py`, `tests/test_biseccion.py`, `tests/test_operacion.py` y `docs/avance.md`. La interfaz web sigue mostrando la vista inicial; este paso verifica el motor y no requiere revisión nueva en navegador.
 
-Commit propuesto: `feat: resolver el punto de operación por bisección`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. El siguiente paso es el 5, conectar el formulario y los resultados de un escenario.
+Commit registrado: `1c7ef04` (`feat: resolver el punto de operación por bisección`). Al retomar el paso 5 ya estaba registrado y el árbol de trabajo estaba limpio; no se duplicó.
+
+## Paso 5 Conectar el formulario y los resultados
+
+Estado: implementación y pruebas automatizadas verificadas. La comprobación interactiva en navegador permanece pendiente. El usuario autorizó explícitamente registrar el commit y continuar con el paso 6 con esa limitación documentada.
+
+`app.py` carga una vista NiceGUI en español con campos de instalación, tabla editable de 3 a 10 puntos de bomba, Simular, Cargar caso base e indicadores de un escenario. `pumpcalc/simulacion.py` mantiene entradas y estado por sesión; editar retira el resultado anterior y valida inmediatamente. La vista programa el recálculo mediante un temporizador de 200 ms para entradas válidas; las revisiones antiguas se descartan. Simular cancela el temporizador y calcula inmediatamente. Se presentan los estados de datos inválidos, pendiente, solución, ausencia de intersección y falta de convergencia.
+
+Comprobaciones realizadas:
+
+- `.venv\Scripts\python.exe -m pytest`: **216 aprobadas y 1 módulo heredado de interfaz omitido** por ausencia de CustomTkinter. Las 9 pruebas nuevas de sesión cubren invalidación, rechazo de llamadas diferidas antiguas, errores por campo y celda, recarga del caso base, edición de puntos, límites de cantidad, independencia de sesiones y estados sin solución o sin convergencia.
+- `.venv\Scripts\python.exe -m py_compile app.py pumpcalc/vista.py pumpcalc/simulacion.py`: sin errores.
+- `.venv\Scripts\python.exe app.py`: servidor iniciado en `http://127.0.0.1:8080`.
+- Solicitud HTTP a `/`: estado 200; formulario y resultado base `3,765450` presentes en la respuesta.
+
+La comprobación interactiva quedó bloqueada: Computer Use indicó que no pudo determinar con suficiente confianza la URL del navegador de Windows para aplicar su política y detuvo el acceso. No se continuó la automatización del navegador ni se declara verificada la interacción, el temporizador o el aspecto visual. El servidor de prueba se detuvo al finalizar.
+
+Revisión visual pendiente: comprobar en navegador el caso base, cambiar D de 25 a 32 mm, introducir un diámetro inválido, restaurar el caso base, editar/agregar/quitar puntos, probar Simular y comprobar la ausencia de cruce con Δz = 40 m. Esta revisión no se presenta como realizada. Se registra el paso 5 con el mensaje `feat: conectar entradas y simulación de un escenario` por instrucción del usuario.
