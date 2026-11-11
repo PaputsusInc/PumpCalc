@@ -107,4 +107,29 @@ Comprobaciones realizadas:
 
 La comprobación interactiva quedó bloqueada: Computer Use indicó que no pudo determinar con suficiente confianza la URL del navegador de Windows para aplicar su política y detuvo el acceso. No se continuó la automatización del navegador ni se declara verificada la interacción, el temporizador o el aspecto visual. El servidor de prueba se detuvo al finalizar.
 
-Revisión visual pendiente: comprobar en navegador el caso base, cambiar D de 25 a 32 mm, introducir un diámetro inválido, restaurar el caso base, editar/agregar/quitar puntos, probar Simular y comprobar la ausencia de cruce con Δz = 40 m. Esta revisión no se presenta como realizada. Se registra el paso 5 con el mensaje `feat: conectar entradas y simulación de un escenario` por instrucción del usuario.
+Commit registrado por instrucción explícita del usuario: `289f5da` (`feat: conectar entradas y simulación de un escenario`). La comprobación visual en un navegador real sigue pendiente. Durante el paso 6 se añadieron pruebas de integración del simulador oficial de NiceGUI para verificar los eventos y componentes del formulario, sin presentar esas pruebas como observación visual.
+
+## Paso 6 Dibujar las curvas y explicar el cálculo
+
+Fecha: 10 de noviembre de 2026, America/Bogota.
+
+Estado: implementación y verificación automatizada completas; revisión visual en navegador real pendiente por indisponibilidad del host de acceso al navegador integrado.
+
+Resultado: `pumpcalc/presentacion.py` prepara las opciones de `ui.echart`, los datos de 150 muestras de Hs y las tablas numéricas sin depender de los controles. La bomba se dibuja uniendo sus nodos por segmentos exactos, sin suavizado que cambie la interpolación. Ambos ejes son numéricos, Q en m³/h y H en m, con leyenda y puntos identificados. El marcador usa exactamente Q y H del solver, con independencia de las muestras gráficas. Las curvas conservan el dominio de la bomba, incluso cuando empieza por encima de cero; sin cruce se mantienen sin inventar un marcador.
+
+`pumpcalc/detalle.py` muestra un panel desplegable con las tolerancias, total de iteraciones, residuo, cota y tabla de bisección. Los caudales, intervalos y semianchos se convierten a m³/h solo para presentar; los residuos se mantienen en metros. Incluye el tramo interpolado y la explicación de fricción: sin iteración para laminar, factor no aplicable en Q = 0 y traza de punto fijo exclusivamente del resultado final en turbulencia o del auxiliar f₄₀₀₀ en transición.
+
+Las pruebas de integración detectaron un fallo al eliminar filas: el temporizador intentaba crearse dentro de la fila eliminada. Se corrigió asociándolo a la página y esperando el refresco de la tabla antes de validar sus controles nuevos. Se mantiene la retirada de gráfica, cifras y detalle cuando las entradas son pendientes o inválidas.
+
+Comprobaciones realizadas:
+
+- `.venv\Scripts\python.exe -m pytest`: **235 aprobadas y 1 módulo heredado de interfaz omitido** por ausencia de CustomTkinter. Se añadieron 17 casos de presentación y 2 recorridos con el simulador oficial de NiceGUI.
+- Las pruebas de presentación verifican 150 muestras, ejes y dominios, segmentos y nodos de la bomba, marcador independiente del muestreo, ambos casos sin cruce, tablas de bisección, trazas de fricción por régimen y Q = 0.
+- Los recorridos simulados verifican el caso base, el recálculo tras 200 ms, ausencia de cálculo a los 100 ms, cambio D = 32 mm, Simular inmediato, Cargar caso base, retirada de resultados inválidos, error junto al campo o celda, agregar/quitar puntos, actualización del dominio y curvas sin marcador para Δz = 40 m. No se registraron errores de NiceGUI en los recorridos.
+- `python -m py_compile` sobre los tres módulos de presentación: sin errores.
+- Inicio de la versión final mediante `.venv\Scripts\python.exe app.py`; solicitud HTTP a `/` con estado 200 y presencia de formulario, gráfica, marcador, resultado base y detalle numérico. El servidor de comprobación se detuvo al finalizar.
+- El intento de abrir `http://127.0.0.1:8080` en el navegador integrado devolvió `The browser access host is unavailable`. No se comprobó el dibujo SVG real, el tamaño o la disposición visual. Las pruebas de usuario simulado no abren un navegador ni sustituyen esa revisión visual.
+
+Archivos preparados: `pumpcalc/vista.py`, `pumpcalc/presentacion.py`, `pumpcalc/detalle.py`, `tests/test_presentacion.py`, `tests/test_vista.py`, `docs/README.md`, `docs/INSTALACION_LOCAL.md` y `docs/avance.md`.
+
+Commit propuesto: `feat: mostrar las curvas y el detalle numérico`. Pendiente de registrar al decir «sigamos», previa revisión del contenido preparado. La siguiente implementación es el paso 7, animar el agua según la velocidad calculada. La comprobación visual pendiente debe retomarse cuando esté disponible el navegador.

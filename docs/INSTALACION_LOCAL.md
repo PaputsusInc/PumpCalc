@@ -1,6 +1,6 @@
 # Instalación y arranque local de PumpCalc
 
-La aplicación usa NiceGUI y el motor verificado hasta el paso 4. El paso 5 añade formulario y resultados de un escenario; su revisión interactiva en navegador sigue pendiente, como se registra en [avance.md](avance.md). La animación y la comparación se incorporan en pasos posteriores. El código anterior de escritorio se conserva como antecedente; `main.py` no es la entrada de la nueva aplicación y sus dependencias no forman parte del nuevo entorno.
+La aplicación usa NiceGUI y el motor hidráulico verificado. Hasta el paso 6 incorpora formulario, resultados, curvas y detalle numérico de un escenario. Los eventos y componentes se comprueban con el simulador oficial de NiceGUI; la revisión visual en un navegador real sigue pendiente, como se registra en [avance.md](avance.md). La animación y la comparación se incorporan en los pasos 7 y 8. El código anterior de escritorio se conserva como antecedente; `main.py` no es la entrada de la nueva aplicación y sus dependencias no forman parte del nuevo entorno.
 
 ## Entorno
 

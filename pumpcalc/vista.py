@@ -1,7 +1,10 @@
 """Formulario y resultados NiceGUI de un escenario de bombeo."""
 
-from nicegui import ui
+from nicegui import context, ui
 
+from pumpcalc.detalle import mostrar_detalle
+from pumpcalc.friccion import ErrorConvergencia
+from pumpcalc.presentacion import opciones_curvas
 from pumpcalc.simulacion import SesionSimulacion
 
 
@@ -23,6 +26,7 @@ def numero(valor: float, decimales: int = 6) -> str:
 
 
 def construir_vista() -> None:
+    cliente = context.client
     sesion = SesionSimulacion()
     sesion.simular()
     campos: dict[str, ui.input] = {}
@@ -57,7 +61,10 @@ def construir_vista() -> None:
                 if sesion.simular_revision(revision):
                     actualizar()
 
-            temporizador = ui.timer(0.2, recalcular, once=True)
+            # La fila que originó el evento puede desaparecer al refrescar la
+            # tabla. El temporizador pertenece a la página, no a esa fila.
+            with cliente:
+                temporizador = ui.timer(0.2, recalcular, once=True)
 
     def editar_instalacion(clave: str, valor: str) -> None:
         if not restaurando:
@@ -86,14 +93,14 @@ def construir_vista() -> None:
             restaurando = False
         simular()
 
-    def agregar() -> None:
+    async def agregar() -> None:
         if sesion.agregar_punto():
-            tabla.refresh()
+            await tabla.refresh()
             programar()
 
-    def quitar(indice: int) -> None:
+    async def quitar(indice: int) -> None:
         if sesion.quitar_punto(indice):
-            tabla.refresh()
+            await tabla.refresh()
             programar()
 
     def entrada(clave: str, etiqueta: str, valor: str, callback) -> ui.input:
@@ -134,7 +141,9 @@ def construir_vista() -> None:
                         with ui.element('td').classes('p-2 align-top'):
                             boton = ui.button(
                                 icon='delete_outline', on_click=lambda i=indice: quitar(i),
-                            ).props(f'flat round aria-label="Quitar punto {indice + 1}"')
+                            ).props(f'flat round aria-label="Quitar punto {indice + 1}"').mark(
+                                f'quitar-punto-{indice + 1}'
+                            )
                             boton.set_enabled(len(sesion.puntos) > 3)
         boton = ui.button('Agregar punto', icon='add', on_click=agregar).props('outline')
         boton.set_enabled(len(sesion.puntos) < 10)
@@ -177,6 +186,19 @@ def construir_vista() -> None:
                     ui.label('H representa altura de energía, no una presión medida.').classes(
                         'text-sm text-slate-600'
                     )
+                if sesion.escenario is not None:
+                    ui.separator()
+                    ui.label('Curvas de bomba y sistema').classes('text-lg font-semibold')
+                    try:
+                        opciones = opciones_curvas(sesion.escenario, sesion.resultado)
+                        ui.echart(opciones, renderer='svg').classes('w-full').style('height:420px')
+                        ui.label(
+                            'Sistema: 150 muestras. Bomba: segmentos de los puntos ingresados. '
+                            'El marcador procede de la bisección, no de las muestras de la gráfica.'
+                        ).classes('text-sm text-slate-600')
+                    except ErrorConvergencia as error:
+                        ui.label(f'No se pudo completar la curva del sistema: {error}').classes('text-red-700')
+                mostrar_detalle(sesion.resultado)
 
     ui.colors(primary='#036b80')
     with ui.header().classes('items-center gap-3'):
@@ -215,7 +237,7 @@ def construir_vista() -> None:
                         'text-sm text-slate-600'
                     )
                     tabla()
-            with ui.column().classes('w-full lg:sticky lg:top-20'):
+            with ui.column().classes('w-full'):
                 resultados()
         ui.label(
             'Modelo educativo de flujo estacionario. Los datos iniciales son de demostración. '

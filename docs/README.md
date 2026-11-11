@@ -7,13 +7,13 @@ Fuentes de verdad: [propuesta v4](../Baseline%20y%20pasos/PumpCalc%20propuesta%2
 
 ## Estado del repositorio y de esta documentación
 
-Los documentos de esta carpeta describen la especificación vigente. El paso 1 incorpora [app.py](../app.py), una vista inicial de NiceGUI, y fija NiceGUI 4.0.0 y pytest 9.2.0 en [requirements.txt](../requirements.txt). Se verificó con Python 3.13.7 en Windows. La guía de arranque está en [Instalación local](INSTALACION_LOCAL.md) y la evidencia en [avance](avance.md).
+Los documentos de esta carpeta describen la especificación vigente. La aplicación [app.py](../app.py) incorpora el motor de cálculo, el formulario de un escenario, las curvas y el detalle numérico hasta el paso 6. Usa NiceGUI 4.0.0 y pytest 9.2.0, fijados en [requirements.txt](../requirements.txt), con Python 3.13.7 en Windows. La guía de arranque está en [Instalación local](INSTALACION_LOCAL.md) y las comprobaciones reales y la revisión visual pendiente en [avance](avance.md).
 
-El código anterior se conserva: [main.py](../main.py) inicia CustomTkinter, [hydraulics.py](../pumpcalc/hydraulics.py) usa Hazen–Williams y [persistencia.py](../pumpcalc/persistencia.py) usa SQLite. No participa en la vista web inicial. El motor nuevo, la animación y la comparación todavía están pendientes; las dependencias de la aplicación antigua no forman parte del nuevo entorno.
+El código anterior se conserva: [main.py](../main.py) inicia CustomTkinter, [hydraulics.py](../pumpcalc/hydraulics.py) usa Hazen–Williams y [persistencia.py](../pumpcalc/persistencia.py) usa SQLite. La aplicación web utiliza los módulos nuevos de validación, interpolación, fricción, pérdidas y bisección. La animación y la comparación A/B corresponden a los pasos 7 y 8; las dependencias de la aplicación antigua no forman parte del nuevo entorno.
 
 ## Instalación y ejecución local
 
-Estos comandos se ejecutan desde la raíz del repositorio y permiten abrir la vista inicial verificada en el paso 1:
+Estos comandos se ejecutan desde la raíz del repositorio para abrir la aplicación local:
 
 ```powershell
 python -m venv .venv
