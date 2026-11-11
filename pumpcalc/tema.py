@@ -4,9 +4,19 @@ from nicegui import ui
 
 
 def aplicar_tema() -> None:
+    """Define colores de NiceGUI y estilos de los paneles de PumpCalc."""
     ui.colors(primary='#087f8c', secondary='#633bd6', accent='#d5fa55', positive='#087f65',
               negative='#c12b46', warning='#a65b09')
     ui.add_css(ESTILOS)
+
+
+def encabezado_seccion(titulo: str, subtitulo: str, icono: str) -> None:
+    """Dibuja el encabezado compartido por la configuración y los resultados."""
+    with ui.element('div').classes('pc-section-head'):
+        ui.icon(icono, size='20px').classes('pc-section-icon').props('aria-hidden=true')
+        with ui.column().classes('gap-0'):
+            ui.label(titulo).classes('pc-section-title')
+            ui.label(subtitulo).classes('pc-section-subtitle')
 
 
 ESTILOS = '''

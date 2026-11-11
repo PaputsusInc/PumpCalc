@@ -6,12 +6,14 @@ from nicegui import ui
 
 from pumpcalc.animacion import (
     ALTO_ESCENA, ANCHO_ESCENA, MovimientoFlujo, capa_trazas,
-    fondo_instalacion, fuente_svg, grosor_tuberia,
+    fondo_instalacion, fuente_svg, grosor_tuberia, trayecto_instalacion,
 )
 from pumpcalc.simulacion import SesionSimulacion
 
 
 class VistaAnimacion:
+    """Muestra una sesión con un fondo SVG y una capa de trazas móviles."""
+
     def __init__(self, sesion: SesionSimulacion, nombre: str = 'A') -> None:
         self.sesion = sesion
         self.movimiento = MovimientoFlujo()
@@ -38,12 +40,15 @@ class VistaAnimacion:
     def actualizar(self) -> None:
         instalacion = self.sesion.escenario.instalacion if self.sesion.escenario is not None else None
         self.movimiento.sincronizar(self.sesion.estado, self.sesion.resultado)
-        self.grosor = grosor_tuberia(instalacion.diametro_m) if instalacion is not None else 24
-        svg = fondo_instalacion(instalacion, self.sesion.resultado)
+        if instalacion is not None:
+            self.grosor = grosor_tuberia(instalacion.diametro_m)
+            self.movimiento.trayecto = trayecto_instalacion(instalacion)
+        svg = fondo_instalacion(instalacion, self.sesion.resultado, self.movimiento.trayecto)
+        # El fondo cambia con el escenario. El temporizador solo mueve las trazas.
         if svg != self.fondo:
             self.fondo = svg
             self.imagen.set_source(fuente_svg(svg))
-        self.imagen.set_content(capa_trazas(self.movimiento.fase_px, self.grosor))
+        self._dibujar_trazas()
         self.ultimo_fotograma = perf_counter()
         self.actualizar_estado()
 
@@ -71,6 +76,10 @@ class VistaAnimacion:
         self.ultimo_fotograma = perf_counter()
         self.actualizar_estado()
 
+    def _dibujar_trazas(self) -> None:
+        movimiento = self.movimiento
+        self.imagen.set_content(capa_trazas(movimiento.fase_px, self.grosor, movimiento.trayecto))
+
     def fotograma(self) -> None:
         ahora = perf_counter()
         segundos = ahora - self.ultimo_fotograma
@@ -80,4 +89,4 @@ class VistaAnimacion:
         # Consulta siempre el estado vigente, incluso durante refrescos asíncronos.
         self.movimiento.sincronizar(self.sesion.estado, self.sesion.resultado)
         if self.movimiento.avanzar(segundos):
-            self.imagen.set_content(capa_trazas(self.movimiento.fase_px, self.grosor))
+            self._dibujar_trazas()

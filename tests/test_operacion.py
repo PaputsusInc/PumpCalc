@@ -97,6 +97,19 @@ def test_raiz_en_extremos_y_nodo_interior(q_m3h):
     # En el nodo interior, el punto medio puede diferir un ulp del Q tabulado.
 
 
+def test_cruce_en_nodo_exacto_muestra_el_tramo_que_termina_en_el_nodo():
+    instalacion = caso_base().instalacion
+    caudal = 2 / 3600
+    altura = evaluar_sistema(instalacion, caudal).altura_sistema_m
+    curva = validar_curva([(0, altura), (2, altura), (4, altura)])
+
+    resultado = resolver_operacion(Escenario(instalacion, curva))
+
+    assert resultado.punto.caudal_m3s == caudal
+    assert resultado.punto.altura_m == altura
+    assert resultado.punto.tramo == curva.puntos[:2]
+
+
 def test_raiz_cero_es_solucion_valida_distinta_de_falta_de_cruce():
     base = caso_base()
     escenario = replace(base, curva=validar_curva([(0, 12), (1, 12), (2, 12)]))

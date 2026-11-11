@@ -69,6 +69,8 @@ class Instalacion:
 
 @dataclass(frozen=True)
 class PuntoBomba:
+    """Un par medido o tabulado de caudal y altura, expresado en SI."""
+
     caudal_m3s: float
     altura_m: float
 
@@ -79,6 +81,8 @@ class PuntoBomba:
 
 @dataclass(frozen=True)
 class CurvaBomba:
+    """Nodos ordenados que delimitan los caudales que podemos evaluar."""
+
     puntos: tuple[PuntoBomba, ...]
 
     def __post_init__(self) -> None:
@@ -101,6 +105,8 @@ class CurvaBomba:
 
 @dataclass(frozen=True)
 class Escenario:
+    """La instalación y la curva de bomba que entran juntas al cálculo."""
+
     instalacion: Instalacion
     curva: CurvaBomba
 

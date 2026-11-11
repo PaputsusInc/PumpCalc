@@ -75,17 +75,20 @@ def colebrook(reynolds: float, rugosidad_relativa: float, *,
     if isinstance(max_iteraciones, bool) or not isinstance(max_iteraciones, int) or max_iteraciones < 1:
         raise ValueError('El límite de iteraciones debe ser un entero positivo.')
 
+    # El valor inicial corresponde a f = 0,02. Cada paso estima x = 1/√f.
     x = 1 / math.sqrt(0.02)
     traza = []
     for numero in range(1, max_iteraciones + 1):
-        nuevo = _punto_fijo(x, reynolds, rugosidad_relativa)
-        cambio = abs(nuevo - x)
+        x_siguiente = _punto_fijo(x, reynolds, rugosidad_relativa)
+        cambio = abs(x_siguiente - x)
         # G(x) = x - phi(x); se evalúa en el nuevo x, no en el anterior.
-        residuo = nuevo - _punto_fijo(nuevo, reynolds, rugosidad_relativa)
-        traza.append(IteracionColebrook(numero, x, nuevo, cambio, residuo))
+        residuo = x_siguiente - _punto_fijo(
+            x_siguiente, reynolds, rugosidad_relativa
+        )
+        traza.append(IteracionColebrook(numero, x, x_siguiente, cambio, residuo))
         if cambio <= tolerancia and abs(residuo) <= tolerancia:
-            return ResultadoColebrook(reynolds, 1 / nuevo ** 2, tuple(traza))
-        x = nuevo
+            return ResultadoColebrook(reynolds, 1 / x_siguiente ** 2, tuple(traza))
+        x = x_siguiente
     raise ErrorConvergencia(
         f'Colebrook no convergió en {max_iteraciones} iteraciones.', tuple(traza)
     )

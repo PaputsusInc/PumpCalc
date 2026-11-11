@@ -85,6 +85,7 @@ def biseccion(funcion: Callable[[float], float], a: float, b: float, *,
             return ResultadoBiseccion('solucion', c, 0, 0, tuple(traza), parametros)
         if semiancho <= parametros.tolerancia_x and abs(f_c) <= parametros.tolerancia_f:
             return ResultadoBiseccion('solucion', c, f_c, semiancho, tuple(traza), parametros)
+        # Conserva la mitad cuyos extremos tienen signos opuestos.
         if (f_a > 0) == (f_c > 0):
             a, f_a = c, f_c
         else:

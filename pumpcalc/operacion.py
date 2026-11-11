@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pumpcalc.biseccion import ParametrosBiseccion, ResultadoBiseccion, biseccion
 from pumpcalc.entradas import Escenario, PuntoBomba
 from pumpcalc.friccion import ErrorConvergencia, MAX_ITERACIONES_COLEBROOK
-from pumpcalc.interpolacion import altura_bomba
+from pumpcalc.interpolacion import altura_bomba, interpolar_bomba
 from pumpcalc.perdidas import ResultadoSistema, evaluar_sistema
 
 
@@ -40,6 +40,7 @@ def resolver_operacion(escenario: Escenario, *,
         )
 
     def diferencia(q: float) -> float:
+        # Un valor positivo indica que la bomba aporta más altura que la requerida.
         return altura_bomba(escenario.curva, q) - sistema(q).altura_sistema_m
 
     try:
@@ -62,13 +63,13 @@ def resolver_operacion(escenario: Escenario, *,
             )
 
         q = resultado.raiz
+        # Esta evaluación en Q* aporta las pérdidas y la traza que verá el usuario.
         final = sistema(q)
-        for izquierdo, derecho in zip(escenario.curva.puntos, escenario.curva.puntos[1:]):
-            if izquierdo.caudal_m3s <= q <= derecho.caudal_m3s:
-                tramo = (izquierdo, derecho)
-                break
-        punto = PuntoOperacion(q, altura_bomba(escenario.curva, q), final, tramo)
-        return ResultadoOperacion('solucion', 'Punto de operación encontrado en el modelo.', punto, resultado)
+        altura, tramo = interpolar_bomba(escenario.curva, q)
+        punto = PuntoOperacion(q, altura, final, tramo)
+        return ResultadoOperacion(
+            'solucion', 'Punto de operación encontrado en el modelo.', punto, resultado,
+        )
     except ErrorConvergencia as error:
         return ResultadoOperacion(
             'falta_convergencia', str(error), None, None, 'colebrook',

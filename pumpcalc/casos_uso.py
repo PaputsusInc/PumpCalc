@@ -1,6 +1,7 @@
-"""Reglas de entrada, cálculo e interpretación independientes de la interfaz."""
+"""Valida y calcula las dos condiciones de tanque de la aplicación de escritorio."""
 
 import math
+from itertools import pairwise
 
 from pumpcalc.hydraulics import altura_instalacion, punto_operacion
 
@@ -31,17 +32,10 @@ def _numero(datos, clave, etiqueta, minimo=0, positivo=False):
     return valor
 
 
-def validar_entradas(datos):
-    """Devuelve números listos para el cálculo o un error asociado a su campo."""
-    longitud = _numero(datos, "longitud", "Longitud de tubería", positivo=True)
-    diametro = _numero(datos, "diametro", "Diámetro interior", positivo=True)
-    vacio = _numero(datos, "desnivel_vacio", "Desnivel con tanque casi vacío")
-    lleno = _numero(datos, "desnivel_lleno", "Desnivel con tanque casi lleno")
-    material = datos.get("material")
-    if material not in MATERIALES:
-        raise ErrorEntrada("material", "Selecciona un material válido.")
+def _leer_accesorios(datos):
+    """Lee cantidades enteras en el orden del catálogo que muestra el formulario."""
     cantidades = {}
-    for indice, (nombre, _) in enumerate(ACCESORIOS.items()):
+    for indice, nombre in enumerate(ACCESORIOS):
         clave = f"accesorio_{indice}"
         texto = str(datos.get(clave, "")).strip()
         try:
@@ -51,9 +45,11 @@ def validar_entradas(datos):
         if valor < 0:
             raise ErrorEntrada(clave, f"{nombre}: la cantidad no puede ser negativa.")
         cantidades[nombre] = valor
-    unidad = datos.get("unidad")
-    if unidad not in UNIDADES:
-        raise ErrorEntrada("unidad", "Elige m³/h, L/min o US gpm. Si la ficha solo dice GPM, aclara el tipo de galón.")
+    return cantidades
+
+
+def _leer_curva(datos, factor_caudal):
+    """Convierte el texto de la curva a pares en m³/h y metros."""
     puntos = []
     for indice, linea in enumerate(str(datos.get("puntos", "")).splitlines(), 1):
         if not linea.strip():
@@ -67,12 +63,29 @@ def validar_entradas(datos):
             raise ErrorEntrada("puntos", f"Curva, línea {indice}: escribe dos números válidos.") from None
         if not math.isfinite(q) or not math.isfinite(h) or q < 0 or h < 0:
             raise ErrorEntrada("puntos", f"Curva, línea {indice}: caudal y altura deben ser finitos y no negativos.")
-        puntos.append((q * UNIDADES[unidad], h))
+        puntos.append((q * factor_caudal, h))
     if len(puntos) < 2:
         raise ErrorEntrada("puntos", "Curva: introduce al menos dos pares caudal; altura.")
-    for indice in range(len(puntos) - 1):
-        if puntos[indice + 1][0] <= puntos[indice][0] or puntos[indice + 1][1] > puntos[indice][1]:
+    for (caudal_anterior, altura_anterior), (caudal, altura) in pairwise(puntos):
+        if caudal <= caudal_anterior or altura > altura_anterior:
             raise ErrorEntrada("puntos", "Curva: ordena por caudal creciente y altura no creciente.")
+    return puntos
+
+
+def validar_entradas(datos):
+    """Devuelve números listos para el cálculo o un error asociado a su campo."""
+    longitud = _numero(datos, "longitud", "Longitud de tubería", positivo=True)
+    diametro = _numero(datos, "diametro", "Diámetro interior", positivo=True)
+    vacio = _numero(datos, "desnivel_vacio", "Desnivel con tanque casi vacío")
+    lleno = _numero(datos, "desnivel_lleno", "Desnivel con tanque casi lleno")
+    material = datos.get("material")
+    if material not in MATERIALES:
+        raise ErrorEntrada("material", "Selecciona un material válido.")
+    cantidades = _leer_accesorios(datos)
+    unidad = datos.get("unidad")
+    if unidad not in UNIDADES:
+        raise ErrorEntrada("unidad", "Elige m³/h, L/min o US gpm. Si la ficha solo dice GPM, aclara el tipo de galón.")
+    puntos = _leer_curva(datos, UNIDADES[unidad])
     return {
         "longitud": longitud, "diametro": diametro,
         "desnivel_vacio": vacio, "desnivel_lleno": lleno,
@@ -83,23 +96,21 @@ def validar_entradas(datos):
 
 def _condicion(datos, desnivel):
     puntos = datos["puntos"]
-    resultado = punto_operacion(
-        puntos, datos["longitud"], datos["diametro"],
-        MATERIALES[datos["material"]], desnivel, datos["suma_k"],
-    )
+    instalacion = {
+        "longitud_m": datos["longitud"],
+        "diametro_mm": datos["diametro"],
+        "coeficiente_c": MATERIALES[datos["material"]],
+        "desnivel_m": desnivel,
+        "suma_k": datos["suma_k"],
+    }
+    resultado = punto_operacion(puntos, **instalacion)
     if resultado is not None:
         return {"estado": "cruce", "resultado": resultado,
                 "mensaje": "Caudal y velocidad estimados para esta condición."}
     q_primero, h_primera = puntos[0]
     q_ultimo, h_ultima = puntos[-1]
-    f_primero = h_primera - altura_instalacion(
-        q_primero, datos["longitud"], datos["diametro"],
-        MATERIALES[datos["material"]], desnivel, datos["suma_k"],
-    )["total_m"]
-    f_ultimo = h_ultima - altura_instalacion(
-        q_ultimo, datos["longitud"], datos["diametro"],
-        MATERIALES[datos["material"]], desnivel, datos["suma_k"],
-    )["total_m"]
+    f_primero = h_primera - altura_instalacion(q_primero, **instalacion)["total_m"]
+    f_ultimo = h_ultima - altura_instalacion(q_ultimo, **instalacion)["total_m"]
     if q_primero == 0 and f_primero < 0:
         return {"estado": "altura_insuficiente", "resultado": None,
                 "mensaje": "La bomba no vence la altura estática ni a caudal cero, según esta curva."}
@@ -113,6 +124,7 @@ def _condicion(datos, desnivel):
 
 
 def calcular_escenario(entradas):
+    """Estima el caudal por separado con el tanque casi vacío y casi lleno."""
     datos = validar_entradas(entradas)
     condiciones = {
         "vacio": _condicion(datos, datos["desnivel_vacio"]),

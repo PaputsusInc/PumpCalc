@@ -25,6 +25,8 @@ DEMOSTRACION = {
 
 
 class PumpCalcApp(ctk.CTk):
+    """Coordina el formulario de escritorio, el cálculo y los casos guardados."""
+
     def __init__(self, almacen=None):
         super().__init__()
         ctk.set_appearance_mode("light")
@@ -236,6 +238,7 @@ class PumpCalcApp(ctk.CTk):
             self._refrescar_resultados()
 
     def _vigente(self):
+        """Comprueba si el resultado corresponde a las entradas actuales."""
         return self.calculo is not None and self.firma == firma_calculo(self._datos_actuales())
 
     def _refrescar_resultados(self):

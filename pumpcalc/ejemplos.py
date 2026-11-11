@@ -26,6 +26,7 @@ def objetivo_demostracion_m3s() -> float:
 
 
 def escenario_ejemplo(nombre: str) -> Escenario:
+    """Deriva variantes de un solo parámetro para comparar su efecto con A."""
     base = caso_base()
     if nombre == 'base':
         return base

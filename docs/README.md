@@ -101,7 +101,7 @@ F(Q) = Hb(Q) − Hs(Q)
 
 Sin cambio de signo se informa la posición relativa de las curvas en el intervalo disponible. Si se agotan iteraciones, se informa falta de convergencia. Ninguna de esas situaciones se sustituye por caudal cero. La cota mide error numérico del solver, no incertidumbre física.
 
-La gráfica une los nodos de bomba con segmentos rectos y muestra 150 muestras del sistema en su dominio. El marcador viene directamente del solver. La animación mantiene niveles fijos y mueve trazas según el tiempo transcurrido con `s(v) = 240v/(v+2)` px/s. El grosor crece con D mediante `8 + 12 log₂(D/0,01)` px, con D en metros. Ambas escalas son comunes a A/B e ilustrativas; no hay llenado temporal. Pausar y reanudar solo afectan al movimiento.
+La gráfica une los nodos de bomba con segmentos rectos y muestra 150 muestras del sistema en su dominio. El marcador viene directamente del solver. La animación mantiene niveles fijos y mueve trazas según el tiempo transcurrido con `s(v) = 240v/(v+2)` px/s. El grosor crece con D mediante `8 + 12 log₂(D/0,01)` px, con D en metros. Ambas escalas son comunes a A/B. La longitud modifica el recorrido y el desnivel mueve el depósito de destino. El esquema muestra la rugosidad, K y las pérdidas calculadas. Los niveles quedan fijos durante cada escenario. Pausar y reanudar controlan el movimiento de las trazas.
 
 ## Tutorial mínimo del motor
 

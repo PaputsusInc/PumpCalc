@@ -8,6 +8,7 @@ from pumpcalc.presentacion import opciones_comparacion
 
 
 def mostrar_comparacion(proyecto: ComparacionEscenarios) -> None:
+    """Muestra las entradas de ambos casos y los resultados vigentes."""
     if not proyecto.comparando:
         return
     with ui.card().classes('pc-panel w-full').mark('comparacion'):
@@ -41,7 +42,7 @@ def mostrar_comparacion(proyecto: ComparacionEscenarios) -> None:
         ):
             fila = {'dato': etiqueta}
             for nombre, sesion in proyecto.sesiones.items():
-                punto = sesion.resultado.punto if sesion.estado == 'solucion' and sesion.resultado else None
+                punto = sesion.punto_vigente
                 fila[nombre] = 'No disponible' if punto is None else f'{obtener(punto):.6f}'
             filas.append(fila)
         ui.table(columns=[{'name': c, 'field': c, 'label': c if c != 'dato' else 'Dato', 'align': 'left'}

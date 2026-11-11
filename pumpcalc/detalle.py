@@ -12,6 +12,7 @@ def cientifico(valor: float) -> str:
 
 
 def tabla_numerica(filas: list[dict], columnas: list[tuple[str, str]]) -> None:
+    """Formatea las trazas del motor para leer iteraciones y residuos."""
     presentadas = [
         {clave: valor if clave == 'iteracion' else cientifico(valor)
          for clave, valor in fila.items()}

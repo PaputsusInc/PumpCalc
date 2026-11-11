@@ -5,6 +5,7 @@ from pumpcalc.hydraulics import altura_instalacion
 
 
 def dibujar(canvas, calculo):
+    """Proyecta caudal y altura al lienzo de la aplicación de escritorio."""
     canvas.delete("all")
     if not calculo:
         return
@@ -27,6 +28,7 @@ def dibujar(canvas, calculo):
         return x0 + (q - q0) * (x1 - x0) / (q1 - q0)
 
     def y(h):
+        # En el lienzo, las coordenadas verticales crecen hacia abajo.
         return y1 - h * (y1 - y0) / max_h
 
     for i in range(6):

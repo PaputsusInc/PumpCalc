@@ -66,7 +66,7 @@ Pausar es un control visual independiente del estado hidráulico. Editar cualqui
 
 ### Representación visible
 
-La escena mostrará agua azul dentro de una tubería llena y pequeñas trazas o partículas que recorran continuamente su interior desde el origen hasta el destino. El movimiento deberá ser perceptible durante el uso, sin depender de una imagen o un video precalculado. La tubería será más ancha al aumentar el diámetro; longitud y desnivel aparecerán rotulados en un esquema que no estará a escala geométrica.
+La escena mostrará agua azul dentro de una tubería llena y pequeñas trazas o partículas que recorran continuamente su interior desde el origen hasta el destino. El movimiento deberá ser perceptible durante el uso, sin depender de una imagen o un video precalculado. La tubería se ensancha con el diámetro. La longitud cambia el recorrido y el desnivel mueve el depósito de destino. La escena muestra la rugosidad, K y las pérdidas asociadas. El esquema usa una escala ilustrativa.
 
 Los niveles de los depósitos permanecerán fijos. La animación representará el flujo estacionario calculado, sin simular el llenado de tanques ni el arranque físico de la bomba. Se utilizará una escena prediseñada, sin editor de circuitos, dibujo libre, simulación 3D ni dinámica computacional de fluidos.
 

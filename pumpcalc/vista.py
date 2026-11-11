@@ -2,34 +2,17 @@
 
 from nicegui import context, ui
 
-from pumpcalc.detalle import mostrar_detalle
 from pumpcalc.comparacion import ComparacionEscenarios, MENSAJES_META
 from pumpcalc.ejemplos import EJEMPLOS
 from pumpcalc.escena import VistaAnimacion
-from pumpcalc.friccion import ErrorConvergencia
-from pumpcalc.presentacion import opciones_curvas
 from pumpcalc.panel_comparacion import mostrar_comparacion
-from pumpcalc.tema import aplicar_tema
-
-
-ESTADOS = {
-    'pendiente': 'Cálculo pendiente',
-    'datos_invalidos': 'Datos inválidos',
-    'solucion': 'Solución encontrada',
-    'sin_interseccion': 'Ausencia de intersección',
-    'falta_convergencia': 'Falta de convergencia',
-}
-REGIMENES = {
-    'sin_flujo': 'Sin flujo', 'laminar': 'Laminar',
-    'transicion': 'Transición', 'turbulento': 'Turbulento',
-}
-
-
-def numero(valor: float, decimales: int = 6) -> str:
-    return f'{valor:.{decimales}f}'.replace('.', ',')
+from pumpcalc.presentacion import formatear_numero
+from pumpcalc.resultados import mostrar_resultados
+from pumpcalc.tema import aplicar_tema, encabezado_seccion
 
 
 def construir_vista() -> None:
+    """Crea los controles y las dos sesiones que pertenecen a esta página."""
     cliente = context.client
     proyecto = ComparacionEscenarios()
     sesion = proyecto.sesiones['A']
@@ -71,6 +54,7 @@ def construir_vista() -> None:
             revision = sesion.revision
 
             def recalcular() -> None:
+                # Comprueba identidad y revisión por si cambiaron B o sus entradas.
                 temporizadores.pop(nombre, None)
                 if (proyecto.sesiones[nombre] is sesion_programada
                         and sesion_programada.simular_revision(revision)):
@@ -97,6 +81,7 @@ def construir_vista() -> None:
 
     async def reflejar_sesion() -> None:
         nonlocal restaurando
+        # Al mostrar valores ya guardados, los eventos del formulario no son ediciones.
         restaurando = True
         try:
             selector.set_value(proyecto.activo)
@@ -146,7 +131,7 @@ def construir_vista() -> None:
                     ui.label(f'{nombre}: {MENSAJES_META[evaluacion.estado]}')
                     if evaluacion.margen_m3s is not None:
                         with ui.element('small'):
-                            ui.label(f'Margen {nombre}: {numero(evaluacion.margen_m3s * 3600)} m³/h')
+                            ui.label(f'Margen {nombre}: {formatear_numero(evaluacion.margen_m3s * 3600)} m³/h')
 
     @ui.refreshable
     def comparacion() -> None:
@@ -187,16 +172,18 @@ def construir_vista() -> None:
                     with ui.element('tr'):
                         with ui.element('td').classes('p-2 align-top'):
                             ui.label(str(indice + 1)).classes('pt-2')
-                        with ui.element('td').classes('p-2 align-top'):
-                            entrada(
-                                f'puntos.{indice + 1}.caudal_m3h', f'Caudal del punto {indice + 1}', q,
-                                lambda e, i=indice: editar_punto(i, 0, e.value),
-                            )
-                        with ui.element('td').classes('p-2 align-top'):
-                            entrada(
-                                f'puntos.{indice + 1}.altura_m', f'Altura del punto {indice + 1}', h,
-                                lambda e, i=indice: editar_punto(i, 1, e.value),
-                            )
+                        # Cada callback captura la fila y la columna de su celda.
+                        for columna, (clave, etiqueta, valor) in enumerate((
+                            ('caudal_m3h', 'Caudal', q),
+                            ('altura_m', 'Altura', h),
+                        )):
+                            with ui.element('td').classes('p-2 align-top'):
+                                entrada(
+                                    f'puntos.{indice + 1}.{clave}',
+                                    f'{etiqueta} del punto {indice + 1}',
+                                    valor,
+                                    lambda e, i=indice, c=columna: editar_punto(i, c, e.value),
+                                )
                         with ui.element('td').classes('p-2 align-top'):
                             boton = ui.button(
                                 icon='delete_outline', on_click=lambda i=indice: quitar(i),
@@ -209,67 +196,7 @@ def construir_vista() -> None:
 
     @ui.refreshable
     def resultados() -> None:
-        with ui.card().classes('pc-panel w-full'):
-            seccion(f'Resultados · Escenario {proyecto.activo}', 'El equilibrio de tu instalación.', 'insights')
-            ui.label(ESTADOS[sesion.estado]).classes(f'pc-status pc-status-{sesion.estado}').props(
-                'role=status aria-live=polite'
-            )
-            if sesion.error is not None:
-                ui.label(str(sesion.error)).classes('text-red-700')
-                ui.label('Corrige el dato señalado para volver a simular.').classes('text-slate-600')
-            elif sesion.estado == 'pendiente':
-                ui.label('Esperando a que termines de editar para recalcular.').classes('text-slate-600')
-            elif sesion.resultado is not None:
-                ui.label(sesion.resultado.mensaje).classes('text-slate-600')
-                punto = sesion.resultado.punto
-                if punto is not None:
-                    sistema = punto.sistema
-                    f = sistema.friccion.factor_darcy
-                    indicadores = [
-                        ('Caudal de operación', numero(punto.caudal_m3s * 3600), 'm³/h'),
-                        ('Altura de operación', numero(punto.altura_m), 'm'),
-                        ('Velocidad del agua', numero(sistema.velocidad_ms), 'm/s'),
-                        ('Pérdida en tubería', numero(sistema.perdida_tuberia_m), 'm'),
-                        ('Pérdida en accesorios', numero(sistema.perdida_accesorios_m), 'm'),
-                        ('Número de Reynolds', numero(sistema.reynolds, 2), ''),
-                        ('Factor de Darcy', 'No aplicable' if f is None else numero(f, 8), ''),
-                        ('Régimen de flujo', REGIMENES[sistema.friccion.regimen], ''),
-                    ]
-                    with ui.element('div').classes('pc-kpis'):
-                        for indice, (etiqueta, valor, unidad) in enumerate(indicadores[:3]):
-                            with ui.element('div').classes(f'pc-kpi pc-kpi-{indice}'):
-                                ui.label(etiqueta).classes('pc-kpi-label')
-                                ui.label(f'{valor} {unidad}'.strip()).classes('pc-kpi-value')
-                    with ui.element('div').classes('pc-metrics'):
-                        for etiqueta, valor, unidad in indicadores[3:]:
-                            with ui.column().classes('pc-metric'):
-                                ui.label(etiqueta).classes('pc-metric-label')
-                                ui.label(f'{valor} {unidad}'.strip()).classes('pc-metric-value')
-                    if sistema.friccion.advertencia:
-                        ui.label(sistema.friccion.advertencia).classes('text-amber-800')
-                    ui.label('H representa altura de energía, no una presión medida.').classes(
-                        'text-sm text-slate-600'
-                    )
-                if sesion.escenario is not None and not proyecto.comparando:
-                    ui.separator()
-                    seccion('Curvas de bomba y sistema', 'Donde se cruzan, el sistema encuentra su caudal.', 'show_chart')
-                    try:
-                        opciones = opciones_curvas(sesion.escenario, sesion.resultado)
-                        ui.echart(opciones, renderer='svg').classes('w-full').style('height:420px')
-                        ui.label(
-                            'Sistema: 150 muestras. Bomba: segmentos de los puntos ingresados. '
-                            'El marcador procede de la bisección, no de las muestras de la gráfica.'
-                        ).classes('text-sm text-slate-600')
-                    except ErrorConvergencia as error:
-                        ui.label(f'No se pudo completar la curva del sistema: {error}').classes('text-red-700')
-                mostrar_detalle(sesion.resultado)
-
-    def seccion(titulo: str, subtitulo: str, icono: str) -> None:
-        with ui.element('div').classes('pc-section-head'):
-            ui.icon(icono, size='20px').classes('pc-section-icon').props('aria-hidden=true')
-            with ui.column().classes('gap-0'):
-                ui.label(titulo).classes('pc-section-title')
-                ui.label(subtitulo).classes('pc-section-subtitle')
+        mostrar_resultados(sesion, proyecto.activo, comparando=proyecto.comparando)
 
     aplicar_tema()
     with ui.header().classes('pc-header items-center gap-3'):
@@ -312,7 +239,7 @@ def construir_vista() -> None:
         with ui.element('div').classes('pc-lab'):
             with ui.element('aside').classes('pc-config'):
                 with ui.card().classes('pc-panel w-full'):
-                    seccion('Instalación', 'Dale forma a tu experimento.', 'tune')
+                    encabezado_seccion('Instalación', 'Dale forma a tu experimento.', 'tune')
                     ui.label('Acepta coma o punto decimal, sin separadores de miles.').classes('text-xs text-slate-600')
                     with ui.element('div').classes('pc-input-grid'):
                         for clave, etiqueta in (
@@ -325,13 +252,13 @@ def construir_vista() -> None:
                             entrada(clave, etiqueta, sesion.entradas[clave],
                                     lambda e, clave=clave: editar_instalacion(clave, e.value))
                 with ui.card().classes('pc-panel w-full'):
-                    seccion('Curva de la bomba', 'Los datos que ponen todo en marcha.', 'ssid_chart')
+                    encabezado_seccion('Curva de la bomba', 'Los datos que ponen todo en marcha.', 'ssid_chart')
                     ui.label('De 3 a 10 puntos: caudal creciente y altura no creciente.').classes(
                         'text-sm text-slate-600'
                     )
                     tabla()
                 with ui.card().classes('pc-panel pc-target w-full'):
-                    seccion('Una meta, dos escenarios', '¿Hasta dónde llega cada configuración?', 'flag')
+                    encabezado_seccion('Una meta, dos escenarios', '¿Hasta dónde llega cada configuración?', 'flag')
                     objetivo = ui.input('Caudal objetivo común (m³/h, opcional)', value=proyecto.objetivo_texto,
                                         on_change=lambda e: cambiar_objetivo(e.value),
                                         validation=lambda _: str(proyecto.error_objetivo)

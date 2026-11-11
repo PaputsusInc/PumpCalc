@@ -13,6 +13,8 @@ BORDE = "#dce6ec"
 
 
 class Formulario:
+    """Conserva texto editable hasta que la capa de cálculo valida los datos."""
+
     def __init__(self, al_cambiar):
         self.al_cambiar = al_cambiar
         self.variables = {}

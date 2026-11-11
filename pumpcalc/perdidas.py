@@ -44,9 +44,13 @@ def evaluar_sistema(instalacion: Instalacion, caudal_m3s: float, *,
         max_iteraciones=max_iteraciones_colebrook,
     )
     altura_velocidad = velocidad ** 2 / (2 * GRAVEDAD)
-    tuberia = friccion.factor_darcy * instalacion.longitud_m / instalacion.diametro_m * altura_velocidad
-    accesorios = instalacion.k_total * altura_velocidad
+    # Ambos términos son alturas de energía en metros, igual que el desnivel.
+    perdida_tuberia = (
+        friccion.factor_darcy * instalacion.longitud_m
+        / instalacion.diametro_m * altura_velocidad
+    )
+    perdida_accesorios = instalacion.k_total * altura_velocidad
     return ResultadoSistema(
-        caudal_m3s, area, velocidad, reynolds, tuberia, accesorios,
-        instalacion.desnivel_m + tuberia + accesorios, friccion,
+        caudal_m3s, area, velocidad, reynolds, perdida_tuberia, perdida_accesorios,
+        instalacion.desnivel_m + perdida_tuberia + perdida_accesorios, friccion,
     )

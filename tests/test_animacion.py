@@ -7,8 +7,8 @@ import xml.etree.ElementTree as ET
 import pytest
 
 from pumpcalc.animacion import (
-    LONGITUD_RECORRIDO, NUMERO_TRAZAS, MovimientoFlujo, capa_trazas,
-    fondo_instalacion, fuente_svg, grosor_tuberia, posicion_traza, rapidez_visual,
+    NUMERO_TRAZAS, MovimientoFlujo, Trayecto, capa_trazas, fondo_instalacion,
+    fuente_svg, grosor_tuberia, rapidez_visual, trayecto_instalacion,
 )
 from pumpcalc.ejemplos import caso_base
 from pumpcalc.entradas import validar_curva
@@ -54,7 +54,7 @@ def test_avance_depende_del_tiempo_y_no_del_numero_de_fotogramas():
         varios.avanzar(0.1)
     assert uno.fase_px == pytest.approx(varios.fase_px)
     assert uno.fase_px == pytest.approx(rapidez_visual(resultado.punto.sistema.velocidad_ms))
-    assert 0 <= uno.fase_px < LONGITUD_RECORRIDO
+    assert 0 <= uno.fase_px < uno.trayecto.longitud_px
 
 
 def test_pausa_y_reanudacion_conservan_fase_y_resultado_hidraulico():
@@ -98,30 +98,42 @@ def test_solucion_cero_permanece_distinta_de_ausencia_de_solucion():
 
 
 @pytest.mark.parametrize(('distancia', 'posicion'), [
-    (0, (150, 265)), (405, (555, 265)), (525, (555, 145)),
+    (0, (150, 265)), (423, (573, 265)), (543, (573, 145)),
     (655, (685, 145)), (665, (150, 265)),
 ])
 def test_trazas_siguen_la_tuberia_del_origen_al_destino(distancia, posicion):
-    assert posicion_traza(distancia) == posicion
+    assert Trayecto(665, 92).posicion(distancia) == posicion
+
+
+def test_depositos_al_mismo_nivel_tienen_un_trayecto_horizontal():
+    instalacion = replace(caso_base().instalacion, desnivel_m=0)
+    trayecto = trayecto_instalacion(instalacion)
+    assert trayecto.nivel_destino_y == 212
+    assert all(y == 265 for _, y in trayecto.puntos)
+    assert trayecto.posicion(trayecto.longitud_px - 1) == pytest.approx(
+        (trayecto.puntos[-1][0] - 1, 265)
+    )
 
 
 def test_capa_movil_solo_contiene_trazas_y_cambia_con_la_fase():
-    capa = capa_trazas(0, 24)
+    trayecto = trayecto_instalacion(caso_base().instalacion)
+    capa = capa_trazas(0, 24, trayecto)
     raiz = ET.fromstring(capa)
     assert len(raiz.findall('circle')) == NUMERO_TRAZAS
     assert raiz.findall('text') == raiz.findall('path') == []
-    assert capa != capa_trazas(10, 24)
+    assert capa != capa_trazas(10, 24, trayecto)
 
 
 def test_fondo_contiene_etiquetas_resultado_y_niveles_fijos():
     escenario = caso_base()
     resultado = resolver_operacion(escenario)
-    svg = fondo_instalacion(escenario.instalacion, resultado)
+    trayecto = trayecto_instalacion(escenario.instalacion)
+    svg = fondo_instalacion(escenario.instalacion, resultado, trayecto)
     raiz = ET.fromstring(svg)
     assert raiz.attrib['viewBox'] == '0 0 840 380'
     assert 'Q = 3,765450 m³/h' in svg
     assert 'D = 25,00 mm' in svg and 'L = 40,00 m' in svg and 'Δz = 12,00 m' in svg
-    sin_solucion = fondo_instalacion(escenario.instalacion, None)
+    sin_solucion = fondo_instalacion(escenario.instalacion, None, trayecto)
     assert 'Q = — m³/h' in sin_solucion
     assert 'v = — m/s' in sin_solucion
     ns = {'svg': 'http://www.w3.org/2000/svg'}

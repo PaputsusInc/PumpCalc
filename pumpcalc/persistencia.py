@@ -12,6 +12,8 @@ RUTA_PREDETERMINADA = Path(__file__).resolve().parent.parent / "pumpcalc_data.sq
 
 
 class AlmacenEscenarios:
+    """Persiste configuraciones de escritorio, incluso antes de calcularlas."""
+
     def __init__(self, ruta=RUTA_PREDETERMINADA):
         self.ruta = Path(ruta)
         self.ruta.parent.mkdir(parents=True, exist_ok=True)
@@ -25,6 +27,8 @@ class AlmacenEscenarios:
         return sqlite3.connect(self.ruta)
 
     def guardar(self, escenario):
+        """Crea un registro o actualiza el escenario identificado por su id."""
+        # La firma permite reconocer resultados calculados con entradas anteriores.
         identificador = escenario.get("id") or str(uuid4())
         ahora = datetime.now().astimezone().isoformat(timespec="seconds")
         with closing(self._conexion()) as db, db:

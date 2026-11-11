@@ -1,3 +1,5 @@
+"""Arranque de la versión de escritorio anterior, basada en CustomTkinter."""
+
 from pumpcalc.app import PumpCalcApp
 
 

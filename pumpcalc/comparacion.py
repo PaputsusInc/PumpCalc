@@ -30,6 +30,8 @@ class DiferenciaCaudal:
 
 
 class ComparacionEscenarios:
+    """Agrupa las sesiones A y B y compara ambas contra la misma meta."""
+
     def __init__(self) -> None:
         self.sesiones = {'A': SesionSimulacion(), 'B': SesionSimulacion()}
         for sesion in self.sesiones.values():
@@ -54,6 +56,7 @@ class ComparacionEscenarios:
         sesion.simular()
 
     def establecer_objetivo(self, texto: str) -> None:
+        """Valida la meta para evaluar el resultado que ya calculó el motor."""
         self.objetivo_texto = texto
         self.error_objetivo = None
         try:
@@ -68,21 +71,21 @@ class ComparacionEscenarios:
         if self.objetivo_m3s is None:
             return EvaluacionMeta('sin_meta')
         sesion = self.sesiones[nombre]
-        resultado = sesion.resultado
-        if sesion.estado != 'solucion' or resultado is None or resultado.punto is None:
+        punto = sesion.punto_vigente
+        if punto is None:
             return EvaluacionMeta('sin_resultado')
-        margen = resultado.punto.caudal_m3s - self.objetivo_m3s
+        margen = punto.caudal_m3s - self.objetivo_m3s
         # Se usa la cota de la raíz calculada, no un umbral físico de la instalación.
-        if abs(margen) <= resultado.biseccion.cota_error:
+        if abs(margen) <= sesion.resultado.biseccion.cota_error:
             return EvaluacionMeta('en_limite', margen)
         return EvaluacionMeta('alcanza' if margen > 0 else 'no_alcanza', margen)
 
     def diferencia_caudal(self) -> DiferenciaCaudal | None:
-        caudales = []
-        for sesion in self.sesiones.values():
-            if sesion.estado != 'solucion' or sesion.resultado is None or sesion.resultado.punto is None:
-                return None
-            caudales.append(sesion.resultado.punto.caudal_m3s)
-        a, b = caudales
-        cambio = b - a
-        return DiferenciaCaudal(cambio, abs(cambio), None if a == 0 else 100 * cambio / a)
+        punto_a = self.sesiones['A'].punto_vigente
+        punto_b = self.sesiones['B'].punto_vigente
+        if punto_a is None or punto_b is None:
+            return None
+        caudal_a = punto_a.caudal_m3s
+        cambio = punto_b.caudal_m3s - caudal_a
+        porcentaje = None if caudal_a == 0 else 100 * cambio / caudal_a
+        return DiferenciaCaudal(cambio, abs(cambio), porcentaje)

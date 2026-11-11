@@ -4,10 +4,12 @@ from copy import deepcopy
 
 from pumpcalc.ejemplos import caso_base
 from pumpcalc.entradas import ErrorEntrada, Escenario, validar_curva, validar_instalacion
-from pumpcalc.operacion import ResultadoOperacion, resolver_operacion
+from pumpcalc.operacion import PuntoOperacion, ResultadoOperacion, resolver_operacion
 
 
 class SesionSimulacion:
+    """Conserva el borrador del formulario y el resultado de su revisión vigente."""
+
     def __init__(self) -> None:
         self.revision = 0
         self.resultado: ResultadoOperacion | None = None
@@ -15,6 +17,13 @@ class SesionSimulacion:
         self.error: ErrorEntrada | None = None
         self.estado = 'pendiente'
         self.cargar_base()
+
+    @property
+    def punto_vigente(self) -> PuntoOperacion | None:
+        """Expone el punto solo si pertenece a la revisión que está en pantalla."""
+        if self.estado == 'solucion' and self.resultado is not None:
+            return self.resultado.punto
+        return None
 
     def cargar_base(self) -> None:
         self.cargar_escenario(caso_base())
@@ -33,6 +42,7 @@ class SesionSimulacion:
         self.preparar()
 
     def copiar(self) -> 'SesionSimulacion':
+        """Crea un escenario editable con sus propias filas de la curva."""
         copia = SesionSimulacion()
         copia.entradas = self.entradas.copy()
         copia.puntos = [fila.copy() for fila in self.puntos]
