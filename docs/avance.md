@@ -189,7 +189,7 @@ Commit registrado: `601b3fd` (`feat: comparar escenarios y evaluar el caudal obj
 
 Fecha: 11 de noviembre de 2026, America/Bogota.
 
-Estado: instalación limpia, pruebas automatizadas, arranque y documentación verificados. **Paso pendiente de cierre por revisión visual en navegador real**; no se declara completada toda la aceptación del plan.
+Estado final: **paso 9 completado**, con instalación limpia, pruebas automatizadas, arranque, documentación y aceptación visual comunicada por el usuario. La limitación de acceso directo del agente al navegador se conserva como parte de la evidencia.
 
 Se creó un entorno independiente en `.tmp\entrega-limpia-20261111` y se instaló `requirements.txt`. Se confirmó Python 3.13.7, NiceGUI 4.0.0, pytest 9.2.0 y aislamiento respecto del intérprete base. `python -m pip check` informó `No broken requirements found.`. Después de añadir comentarios de unidades, dominio, transición y cota numérica, `python -m pytest` produjo **282 passed, 1 skipped in 7.08s**. La omisión corresponde al módulo heredado de interfaz CustomTkinter, que no forma parte de la entrega web.
 
@@ -203,4 +203,14 @@ Se verificaron los enlaces locales y los bloques Markdown de los seis documentos
 
 Archivos preparados: `README.md`, `docs/README.md`, `docs/INSTALACION_LOCAL.md`, `docs/GUIA_SUSTENTACION.md`, `docs/VALIDACION_FINAL.md`, `docs/avance.md`, `pumpcalc/comparacion.py`, `pumpcalc/entradas.py`, `pumpcalc/friccion.py` y `pumpcalc/operacion.py`.
 
-Commit propuesto: `chore: verificar y documentar la entrega de PumpCalc`. Cambios documentales y comentarios preparados para revisión; todavía no se ha creado este último commit. Al retomar, revisar el contenido preparado y completar la comprobación visual pendiente antes de declarar cerrada toda la entrega.
+Commit registrado: `89431fd` (`chore: verificar y documentar la entrega de PumpCalc`). Al retomar se confirmó que contenía los 10 archivos preparados y que el árbol de trabajo estaba limpio; no se duplicó.
+
+### Cierre de la aceptación manual
+
+Fecha: 11 de noviembre de 2026, America/Bogota.
+
+Se volvió a intentar el navegador integrado, que devolvió `The browser access host is unavailable`. Se dejó la aplicación ejecutándose para revisión local y se comprobó HTTP 200 con resultado base, comparación y pausa. Se pidió al usuario revisar A/B con D = 32 mm, mayor caudal y trazas más lentas, pausa/reanudación, entrada inválida D = 0 y ejemplo sin intersección. Respondió **«lo veo bien»**. Se registra como aceptación visual general del recorrido solicitado, sin atribuir al agente observación directa ni resultados individuales no informados por el usuario.
+
+Con esta aceptación se cierra el pendiente visual del paso 9 y el plan de nueve pasos queda completado. Se actualizaron los seis documentos de entrega para reflejar el cierre y el commit ya registrado. Este ajuste es documental: no cambia el código ni requiere repetir la suite numérica; conserva el resultado previo de 282 pruebas aprobadas y una omisión heredada.
+
+Commit de cierre documental propuesto: `docs: registrar la aceptación visual de PumpCalc`. Se deja preparado para registrar al decir «sigamos»; ese turno cierra Git sin iniciar otro paso de desarrollo.

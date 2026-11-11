@@ -1,6 +1,6 @@
 # Instalación y arranque local de PumpCalc
 
-La aplicación usa NiceGUI y el motor hidráulico verificado. Hasta el paso 8 incorpora escenarios A/B independientes, resultados, curvas, detalle numérico, animaciones y meta común. Los eventos y componentes se comprueban con el simulador oficial de NiceGUI; la revisión visual en un navegador real sigue pendiente, como se registra en [avance.md](avance.md). El código anterior de escritorio se conserva como antecedente; `main.py` no es la entrada de la nueva aplicación y sus dependencias no forman parte del nuevo entorno.
+La aplicación usa NiceGUI y el motor hidráulico verificado. Incorpora escenarios A/B independientes, resultados, curvas, detalle numérico, animaciones y meta común. Los eventos y componentes se comprueban con el simulador oficial de NiceGUI; el usuario comunicó su aceptación visual del recorrido local, como se registra en [avance.md](avance.md). El código anterior de escritorio se conserva como antecedente; `main.py` no es la entrada de la nueva aplicación y sus dependencias no forman parte del nuevo entorno.
 
 ## Entorno
 
@@ -35,6 +35,6 @@ Comprueba las dependencias y ejecuta la suite completa con:
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-El 11 de noviembre de 2026 se repitieron instalación, pruebas y arranque en un entorno nuevo, `.tmp\entrega-limpia-20261111`: 282 pruebas aprobadas, 1 módulo heredado omitido y respuesta HTTP 200. La revisión visual sigue pendiente porque el host del navegador integrado no está disponible. Consulta el [informe de verificación](VALIDACION_FINAL.md) para los resultados y el recorrido pendiente, y la [guía de sustentación](GUIA_SUSTENTACION.md) para demostrar los ejemplos.
+El 11 de noviembre de 2026 se repitieron instalación, pruebas y arranque en un entorno nuevo, `.tmp\entrega-limpia-20261111`: 282 pruebas aprobadas, 1 módulo heredado omitido y respuesta HTTP 200. El usuario aceptó visualmente el recorrido local con «lo veo bien»; el agente no pudo observarlo directamente por indisponibilidad del navegador integrado. Consulta el [informe de verificación](VALIDACION_FINAL.md) para los resultados y el alcance de la aceptación, y la [guía de sustentación](GUIA_SUSTENTACION.md) para demostrar los ejemplos.
 
 Las pruebas numéricas heredadas se conservan como comprobación de la versión anterior. La prueba de interfaz de escritorio se omite explícitamente si no está instalado CustomTkinter, que no forma parte de las dependencias de la aplicación web. Esa omisión no corresponde a la interfaz NiceGUI. Las comprobaciones efectivamente realizadas se registran en [avance.md](avance.md). El alcance final se describe en [README.md](README.md) y el orden de trabajo en el [plan de desarrollo](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md).

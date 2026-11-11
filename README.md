@@ -31,7 +31,7 @@ Los datos son ficticios. La animación es ilustrativa y no representa el llenado
 
 - [Manual, modelo y tutorial del motor](docs/README.md).
 - [Guía de sustentación](docs/GUIA_SUSTENTACION.md).
-- [Informe de verificación y pendientes](docs/VALIDACION_FINAL.md).
+- [Informe de verificación y aceptación manual](docs/VALIDACION_FINAL.md).
 - [Registro de desarrollo](docs/avance.md).
 
-La validación automatizada y la revisión visual en navegador real se registran por separado en el informe. `main.py` y los módulos de escritorio son antecedentes conservados; el arranque vigente es `app.py`.
+La validación automatizada y la aceptación visual comunicada por el usuario se registran por separado en el informe. `main.py` y los módulos de escritorio son antecedentes conservados; el arranque vigente es `app.py`.

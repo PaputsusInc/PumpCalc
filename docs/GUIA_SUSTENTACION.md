@@ -1,6 +1,6 @@
 # Guía breve de sustentación
 
-Duración sugerida: 6–8 minutos. Instala y abre la aplicación según el [manual](README.md). Antes de exponer, completa el recorrido visual del [informe](VALIDACION_FINAL.md): durante el desarrollo no se pudo acceder al navegador real.
+Duración sugerida: 6–8 minutos. Instala y abre la aplicación según el [manual](README.md). Antes de exponer, repasa el recorrido del [informe](VALIDACION_FINAL.md), cuya aceptación visual comunicó el usuario al cerrar el desarrollo.
 
 ## Recorrido
 
@@ -26,6 +26,6 @@ Duración sugerida: 6–8 minutos. Instala y abre la aplicación según el [manu
 
 ## Evidencia y límites
 
-El [informe](VALIDACION_FINAL.md) registra instalación limpia, versiones, 282 pruebas aprobadas, resultados y revisión visual pendiente. Explica la omisión del módulo de escritorio antiguo. Las pruebas del simulador oficial de NiceGUI verifican eventos y estado sin observar el dibujo en pantalla.
+El [informe](VALIDACION_FINAL.md) registra instalación limpia, versiones, 282 pruebas aprobadas, resultados y aceptación visual comunicada por el usuario. Explica la omisión del módulo de escritorio antiguo. Las pruebas del simulador oficial de NiceGUI verifican eventos y estado sin observar el dibujo en pantalla; la aceptación manual se registra aparte.
 
 El modelo usa agua a aproximadamente 20 °C, una bomba a velocidad fija y una tubería llena. No calcula cavitación, eficiencia, transitorios ni redes. La curva de demostración es ficticia y alcanzar la meta solo describe este modelo. Todos los integrantes deben comprender el recorrido de datos desde validación hasta resultados y poder explicar estas limitaciones.

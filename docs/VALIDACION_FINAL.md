@@ -1,8 +1,8 @@
 # Informe de verificación de entrega
 
-Fecha: **11 de noviembre de 2026**, America/Bogota. Base de código: commit `601b3fd` del paso 8, más los comentarios y documentos del paso 9 preparados en el árbol de trabajo. Referencias: secciones 8–10 de la [línea base](../Baseline%20y%20pasos/PumpCalc_linea_base_Codex_con_animacion.md) y [plan por pasos](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md).
+Fecha: **11 de noviembre de 2026**, America/Bogota. Base de código: commit `89431fd` del paso 9, que incorpora la implementación del paso 8 (`601b3fd`). Este cierre documental registra la aceptación manual posterior. Referencias: secciones 8–10 de la [línea base](../Baseline%20y%20pasos/PumpCalc_linea_base_Codex_con_animacion.md) y [plan por pasos](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md).
 
-**Estado:** instalación limpia, pruebas automatizadas y arranque HTTP verificados. Falta observar el recorrido en navegador real para cerrar toda la aceptación del paso 9. Este informe no declara terminada esa comprobación.
+**Estado:** paso 9 completado con instalación limpia, pruebas automatizadas, arranque HTTP y aceptación visual comunicada por el usuario. La revisión manual se apoya en su confirmación general del recorrido, con el alcance descrito abajo.
 
 ## Instalación y ejecución observadas
 
@@ -66,20 +66,24 @@ Los recorridos del **simulador oficial de usuario de NiceGUI** comprobaron recá
 
 Las pruebas de animación comprobaron s(0) = 0, crecimiento con v, grosor creciente con D, recorrido de trazas, avance según el tiempo, pausa y suspensión sin resultado vigente. Las comprobaciones de componentes verificaron que los fotogramas actualizan la capa de trazas sin recalcular el motor o reconstruir las curvas.
 
-## Revisión visual pendiente
+## Aceptación visual comunicada por el usuario
 
-El acceso al navegador integrado devolvió `The browser access host is unavailable`. La respuesta HTTP y las pruebas simuladas no permiten evaluar legibilidad, disposición, dibujo de ECharts o movimiento real del SVG. Cuando esté disponible un navegador, completar y registrar:
+El 11 de noviembre de 2026 se dejó la aplicación ejecutándose en `http://127.0.0.1:8080`, se comprobó nuevamente HTTP 200 y se indicó al usuario este recorrido: copiar A en B y cambiar D a 32 mm, comparar mayor caudal y trazas más lentas, probar pausa/reanudación y D = 0, y cargar **Sin intersección** para revisar aviso y escena detenida. Su respuesta fue **«lo veo bien»**. Se registra como aceptación visual general del recorrido solicitado y permite cerrar el pendiente del paso 9.
 
-- [ ] Abrir `http://127.0.0.1:8080`; observar el caso base, unidades, curvas, marcador y trazas en movimiento.
-- [ ] Copiar A en B, cambiar D a 32 mm y comparar ambas escenas. Confirmar A intacto, B más ancho, trazas más lentas y cifras coherentes.
-- [ ] Mostrar las iteraciones y comprobar legibilidad de tablas y tolerancias.
-- [ ] Pausar y reanudar cada escena: el resultado debe conservarse y el movimiento responder.
-- [ ] Introducir D = 0: ver el error, retirada del resultado vigente y suspensión del movimiento. Restaurar 32 mm y comprobar recuperación.
-- [ ] Cambiar solo la meta: conservar el punto de operación y actualizar margen y estado.
-- [ ] Cargar **Sin intersección** en B: ver el aviso, curvas sin marcador de B y escena detenida.
-- [ ] Recargar: recuperar ambos casos base y la meta de demostración.
+El acceso del agente al navegador integrado siguió devolviendo `The browser access host is unavailable`. El agente no observó directamente el dibujo ni el movimiento. El usuario no identificó navegador o versión ni aportó resultados individuales de cada acción; no se atribuyen mediciones o comprobaciones pormenorizadas a su respuesta. La evidencia automatizada se conserva separada de esta aceptación manual.
 
-Registrar fecha, navegador y resultado real de cada comprobación antes de declararla aprobada. La [guía de sustentación](GUIA_SUSTENTACION.md) propone el recorrido de exposición.
+### Guion para repetir la revisión
+
+1. Abrir la aplicación y observar caso base, unidades, curvas, marcador y trazas en movimiento.
+2. Copiar A en B, cambiar D a 32 mm y comparar ambas escenas: A intacto, B más ancho, trazas más lentas y cifras coherentes.
+3. Mostrar las iteraciones y comprobar legibilidad de tablas y tolerancias.
+4. Pausar y reanudar cada escena, conservando los resultados.
+5. Introducir D = 0, revisar error y suspensión del movimiento; restaurar 32 mm y comprobar recuperación.
+6. Cambiar solo la meta, conservando el punto de operación y actualizando margen y estado.
+7. Cargar **Sin intersección** en B y observar aviso, ausencia de marcador de B y escena detenida.
+8. Recargar y recuperar ambos casos base y la meta de demostración.
+
+Este guion sirve para futuras revisiones y no es un registro de observaciones individuales realizadas por el agente. La [guía de sustentación](GUIA_SUSTENTACION.md) propone el recorrido de exposición.
 
 ## Límites de la evidencia
 

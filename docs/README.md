@@ -1,13 +1,13 @@
 # PumpCalc
 
 PumpCalc es un simulador web local en Python y NiceGUI para explorar el caudal de una bomba en una instalación simple. Incluye animación 2D vinculada a la velocidad calculada, comparación de escenarios A/B y explicación de interpolación lineal, Colebrook por punto fijo y bisección.
-**Estado al 11 de noviembre de 2026:** implementación hasta el paso 8 e instalación limpia verificadas con pruebas automatizadas. El cierre del paso 9 conserva pendiente la revisión visual en navegador real. La evidencia está en el [informe de verificación](VALIDACION_FINAL.md).
+**Estado al 11 de noviembre de 2026:** paso 9 completado con instalación limpia, pruebas automatizadas y aceptación visual comunicada por el usuario. La evidencia y el alcance de esa aceptación están en el [informe de verificación](VALIDACION_FINAL.md).
 
 Fuentes de verdad: [propuesta v4](../Baseline%20y%20pasos/PumpCalc%20propuesta%20v4.docx), [línea base con animación](../Baseline%20y%20pasos/PumpCalc_linea_base_Codex_con_animacion.md) y [plan de desarrollo por pasos](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md). La propuesta y la línea base fijan el producto y los cálculos; el plan establece el orden de implementación y verificación. Los documentos de `docs` desarrollan esas fuentes y no las sustituyen.
 
 ## Estado del repositorio y de esta documentación
 
-Los documentos de esta carpeta describen la especificación vigente. La aplicación [app.py](../app.py) incorpora el motor de cálculo, los escenarios A/B independientes, las curvas, el detalle numérico, la animación 2D y la meta común hasta el paso 8. Usa NiceGUI 4.0.0 y pytest 9.2.0, fijados en [requirements.txt](../requirements.txt), con Python 3.13.7 en Windows. La guía de arranque está en [Instalación local](INSTALACION_LOCAL.md) y las comprobaciones reales y la revisión visual pendiente en [avance](avance.md).
+Los documentos de esta carpeta describen la especificación vigente. La aplicación [app.py](../app.py) incorpora el motor de cálculo, los escenarios A/B independientes, las curvas, el detalle numérico, la animación 2D y la meta común. Usa NiceGUI 4.0.0 y pytest 9.2.0, fijados en [requirements.txt](../requirements.txt), con Python 3.13.7 en Windows. La guía de arranque está en [Instalación local](INSTALACION_LOCAL.md) y las comprobaciones reales y la aceptación manual en [avance](avance.md).
 
 El código anterior se conserva: [main.py](../main.py) inicia CustomTkinter, [hydraulics.py](../pumpcalc/hydraulics.py) usa Hazen–Williams y [persistencia.py](../pumpcalc/persistencia.py) usa SQLite. La aplicación web utiliza los módulos nuevos de validación, interpolación, fricción, pérdidas y bisección. Permite copiar A en B, cargar tres ejemplos en el escenario activo y comparar resultados y animaciones con una escala común. La meta solo cambia su evaluación. Las dependencias de la aplicación antigua no forman parte del nuevo entorno.
 
@@ -155,4 +155,4 @@ Para construir datos visibles se usan `validar_instalacion` y `validar_curva` de
 
 Se modelan agua a aproximadamente 20 °C, una bomba centrífuga a velocidad fija y una tubería llena entre depósitos abiertos. No se incluyen redes, múltiples bombas, velocidad variable, llenado temporal, cavitación, NPSH, eficiencia, consumo, costos, optimización, cuentas, base de datos, importación/exportación ni publicación obligatoria. La animación es ilustrativa; alcanzar la meta no certifica una instalación real.
 
-El cierre incluye una [guía de sustentación](GUIA_SUSTENTACION.md), un [informe de verificación](VALIDACION_FINAL.md) y el [registro de avance](avance.md). Falta completar y registrar la observación visual del recorrido A → B → comparación animada para declarar terminada toda la aceptación del plan.
+El cierre incluye una [guía de sustentación](GUIA_SUSTENTACION.md), un [informe de verificación](VALIDACION_FINAL.md) y el [registro de avance](avance.md). La aceptación visual del recorrido fue comunicada por el usuario; el agente no pudo observar directamente el navegador.
