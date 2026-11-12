@@ -79,14 +79,20 @@ def _opciones_grafica(dominio: tuple[float, float], series: list[dict]) -> dict:
 
 
 def filas_biseccion(resultado: ResultadoOperacion) -> list[dict]:
-    """Convierte a m³/h solo para presentación; los residuos siguen en m."""
+    """Convierte a m³/h y calcula Ea entre puntos medios consecutivos."""
     if resultado.biseccion is None:
         return []
-    return [
-        {'iteracion': paso.iteracion, 'a': paso.a * 3600, 'b': paso.b * 3600,
-         'c': paso.c * 3600, 'residuo': paso.f_c, 'cota': paso.semiancho * 3600}
-        for paso in resultado.biseccion.traza
-    ]
+    filas = []
+    c_anterior = None
+    for paso in resultado.biseccion.traza:
+        filas.append({
+            'iteracion': paso.iteracion, 'a': paso.a * 3600, 'b': paso.b * 3600,
+            'c': paso.c * 3600,
+            'ea': None if c_anterior is None else abs(paso.c - c_anterior) * 3600,
+            'residuo': paso.f_c, 'cota': paso.semiancho * 3600,
+        })
+        c_anterior = paso.c
+    return filas
 
 
 def filas_colebrook(resultado: ResultadoOperacion) -> list[dict]:

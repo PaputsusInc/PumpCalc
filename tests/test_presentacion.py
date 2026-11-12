@@ -82,12 +82,15 @@ def test_tabla_biseccion_convierte_caudales_y_cota_sin_alterar_residuos():
     assert len(filas) == resultado.biseccion.iteraciones
     assert filas[0]['a'] == 0 and filas[0]['b'] == 5
     assert filas[0]['c'] == filas[0]['cota'] == 2.5
+    assert filas[0]['ea'] is None
     for fila, paso in zip(filas, resultado.biseccion.traza):
         assert fila['a'] == paso.a * 3600
         assert fila['b'] == paso.b * 3600
         assert fila['c'] == paso.c * 3600
         assert fila['cota'] == paso.semiancho * 3600
         assert fila['residuo'] == paso.f_c
+    for anterior, actual in zip(filas, filas[1:]):
+        assert actual['ea'] == pytest.approx(abs(actual['c'] - anterior['c']))
 
 
 def test_traza_colebrook_solo_contiene_el_factor_del_resultado_final():
@@ -97,6 +100,8 @@ def test_traza_colebrook_solo_contiene_el_factor_del_resultado_final():
     assert len(filas) == colebrook.iteraciones
     assert filas[-1]['x'] == colebrook.traza[-1].x
     assert filas[-1]['cambio'] <= 1e-10
+    assert all(fila['cambio'] == pytest.approx(abs(fila['x'] - fila['x_anterior']))
+               for fila in filas)
     assert abs(filas[-1]['residuo']) <= 1e-10
 
 

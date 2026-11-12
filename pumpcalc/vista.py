@@ -223,20 +223,6 @@ def construir_vista() -> None:
             ui.icon('circle').props('aria-hidden=true')
             ui.label('Tu laboratorio local')
     with ui.column().classes('pc-main'):
-        with ui.element('section').classes('pc-hero'):
-            with ui.element('div'):
-                ui.label('EL AGUA SE MUEVE. TÚ EXPERIMENTAS.').classes('pc-eyebrow')
-                ui.html('<h1>Pon tus ideas<br>a <span>fluir.</span></h1>')
-                ui.label('Cambia una variable. Descubre el equilibrio. '
-                         'Mira cómo una misma bomba cuenta dos historias distintas.').classes('pc-hero-copy')
-                with ui.element('div').classes('pc-methods'):
-                    for metodo in ('01 · Interpolación', '02 · Colebrook', '03 · Bisección'):
-                        ui.label(metodo)
-            with ui.element('div').classes('pc-hero-art').props('aria-hidden=true'):
-                ui.element('div').classes('pc-orbit')
-                ui.icon('water_drop', size='116px').classes('pc-hero-water')
-                ui.html('<div class="pc-hero-equation"><strong>v = Q / A</strong>'
-                        '<small>MÁS CAUDAL ≠ MÁS VELOCIDAD</small></div>')
         with ui.card().classes('pc-panel pc-toolbar w-full'):
             with ui.element('div').classes('pc-toolbar-main'):
                 ui.label('EXPERIMENTA').classes('pc-eyebrow')

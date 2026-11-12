@@ -14,7 +14,7 @@ def cientifico(valor: float) -> str:
 def tabla_numerica(filas: list[dict], columnas: list[tuple[str, str]]) -> None:
     """Formatea las trazas del motor para leer iteraciones y residuos."""
     presentadas = [
-        {clave: valor if clave == 'iteracion' else cientifico(valor)
+        {clave: valor if clave == 'iteracion' else '—' if valor is None else cientifico(valor)
          for clave, valor in fila.items()}
         for fila in filas
     ]
@@ -48,8 +48,11 @@ def mostrar_detalle(resultado: ResultadoOperacion) -> None:
             if filas:
                 tabla_numerica(filas, [
                     ('iteracion', 'Iteración'), ('a', 'a (m³/h)'), ('b', 'b (m³/h)'),
-                    ('c', 'c (m³/h)'), ('residuo', 'F(c) (m)'), ('cota', 'Semiancho (m³/h)'),
+                    ('c', 'c (m³/h)'), ('ea', 'Ea(Q) (m³/h)'),
+                    ('residuo', 'F(c) (m)'), ('cota', 'Semiancho (m³/h)'),
                 ])
+                ui.label('Ea(Q) = |cᵢ − cᵢ₋₁|. En la primera iteración no hay un c anterior; '
+                         'el semiancho es la cota del intervalo.').classes('text-sm text-slate-600')
             elif resultado.punto is not None:
                 ui.label('Raíz exacta en un extremo: no se requirió dividir el intervalo.')
             else:
@@ -92,10 +95,10 @@ def mostrar_detalle(resultado: ResultadoOperacion) -> None:
                 f'f = {colebrook.factor_darcy:.10f}; {colebrook.iteraciones} iteraciones.'
             )
             ui.label(
-                f'x = 1/√f; x₀ = 1/√0,02. Cambio y residuo absolutos '
+                f'x = 1/√f; x₀ = 1/√0,02. Ea(x) y |G(x)| '
                 f'≤ {cientifico(TOLERANCIA_COLEBROOK)}; máximo {MAX_ITERACIONES_COLEBROOK} iteraciones.'
             )
             tabla_numerica(filas_colebrook(resultado), [
                 ('iteracion', 'Iteración'), ('x_anterior', 'x anterior'), ('x', 'x'),
-                ('cambio', 'Cambio absoluto'), ('residuo', 'G(x)'),
+                ('cambio', 'Ea(x) = |xᵢ − xᵢ₋₁|'), ('residuo', 'G(x)'),
             ])

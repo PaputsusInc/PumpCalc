@@ -23,6 +23,10 @@ def test_formulario_recalcula_y_retira_grafica_y_detalle_si_los_datos_son_invali
             assert abs(marcador[0] - 3.765449524) < 1e-8
             assert len(grafica.options['series'][1]['data']) == 150
             await user.should_see('Iteraciones de bisección: 17.')
+            tablas = [tabla for tabla in user.find(ui.table).elements]
+            etiquetas = [[columna['label'] for columna in tabla.columns] for tabla in tablas]
+            assert any('Ea(Q) (m³/h)' in columnas for columnas in etiquetas)
+            assert any('Ea(x) = |xᵢ − xᵢ₋₁|' in columnas for columnas in etiquetas)
             (diametro,) = user.find(kind=ui.input, content='Diámetro interno D (mm)').elements
             with user:
                 diametro.set_value('32')
