@@ -32,6 +32,14 @@ def mostrar_comparacion(proyecto: ComparacionEscenarios) -> None:
             ('k_total', 'K total'),
         ):
             filas.append({'dato': etiqueta, **{n: s.entradas[clave] for n, s in proyecto.sesiones.items()}})
+        for clave, etiqueta in (
+            ('potencia_hp', 'Potencia del motor (HP)'),
+            ('altura_maxima_m', 'Altura máxima Hmax (m)'),
+            ('caudal_maximo_m3h', 'Caudal máximo Qmax (m³/h)'),
+        ):
+            filas.append({'dato': etiqueta, **{
+                n: s.datos_bomba[clave] or 'No indicada' for n, s in proyecto.sesiones.items()
+            }})
         filas.append({'dato': 'Puntos de bomba (m³/h; m)', **{
             n: ' · '.join(f'({q}; {h})' for q, h in s.puntos) for n, s in proyecto.sesiones.items()
         }})

@@ -22,6 +22,7 @@ def test_temporizador_mueve_solo_trazas_pausa_reanuda_y_se_detiene_con_error(cap
     async def recorrido():
         async with user_simulation(main_file=APP) as user:
             await user.open('/')
+            user.find(marker='selector-vista').elements.pop().set_value('2D')
             (imagen,) = user.find(ui.interactive_image).elements
             (grafica,) = user.find(ui.echart).elements
             fuente_inicial, trazas_iniciales = imagen.source, imagen.content
@@ -39,6 +40,11 @@ def test_temporizador_mueve_solo_trazas_pausa_reanuda_y_se_detiene_con_error(cap
             user.find('Reanudar animación').click()
             await asyncio.sleep(0.12)
             assert imagen.content != pausadas
+            user.find('Pausar animación').click()
+            user.find(marker='reproducir-A').click()
+            assert imagen.content == trazas_iniciales
+            await asyncio.sleep(0.12)
+            assert imagen.content != trazas_iniciales
             (diametro,) = user.find(kind=ui.input, content='Diámetro interno D (mm)').elements
             with user:
                 diametro.set_value('0')
@@ -70,6 +76,7 @@ def test_cambio_de_diametro_sincroniza_escena_y_resultados_sin_recrear_imagen(ca
     async def recorrido():
         async with user_simulation(main_file=APP) as user:
             await user.open('/')
+            user.find(marker='selector-vista').elements.pop().set_value('2D')
             (imagen,) = user.find(ui.interactive_image).elements
             assert 'D = 25,00 mm' in fondo(imagen)
             (diametro,) = user.find(kind=ui.input, content='Diámetro interno D (mm)').elements
@@ -106,12 +113,13 @@ def test_otras_entradas_actualizan_la_escena(campo, valor, etiqueta):
     async def recorrido():
         async with user_simulation(main_file=APP) as user:
             await user.open('/')
+            user.find(marker='selector-vista').elements.pop().set_value('2D')
             (imagen,) = user.find(ui.interactive_image).elements
             antes = fondo(imagen)
             (entrada,) = user.find(kind=ui.input, content=campo).elements
             with user:
                 entrada.set_value(valor)
-            await user.should_see('Animación en movimiento según la velocidad calculada.', retries=10)
+            await user.should_see('Visualización vinculada a la velocidad calculada.', retries=10)
             despues = fondo(imagen)
             assert etiqueta in despues
             assert medida(despues, 'v =') < medida(antes, 'v =')

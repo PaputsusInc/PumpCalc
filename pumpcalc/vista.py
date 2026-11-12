@@ -22,6 +22,8 @@ def construir_vista() -> None:
     escenas: dict[str, VistaAnimacion] = {}
 
     def error_campo(clave: str) -> str | None:
+        if clave in sesion.errores_datos_bomba:
+            return sesion.errores_datos_bomba[clave]
         return str(sesion.error) if sesion.error is not None and sesion.error.campo == clave else None
 
     def actualizar() -> None:
@@ -74,6 +76,14 @@ def construir_vista() -> None:
         sesion.editar_punto(indice, columna, valor)
         programar()
 
+    def editar_dato_bomba(clave: str, valor: str) -> None:
+        if not restaurando:
+            sesion.editar_dato_bomba(clave, valor)
+            for campo in sesion.datos_bomba:
+                campos[campo].validate()
+            if proyecto.comparando:
+                comparacion.refresh()
+
     def simular() -> None:
         cancelar_temporizador()
         sesion.simular()
@@ -86,6 +96,8 @@ def construir_vista() -> None:
         try:
             selector.set_value(proyecto.activo)
             for clave, valor in sesion.entradas.items():
+                campos[clave].set_value(valor)
+            for clave, valor in sesion.datos_bomba.items():
                 campos[clave].set_value(valor)
             await tabla.refresh()
         finally:
@@ -116,6 +128,10 @@ def construir_vista() -> None:
     def cambiar_comparacion(valor: bool) -> None:
         proyecto.comparando = bool(valor)
         actualizar()
+
+    def cambiar_vista(modo: str) -> None:
+        for escena in escenas.values():
+            escena.seleccionar_vista(modo)
 
     def cambiar_objetivo(valor: str) -> None:
         proyecto.establecer_objetivo(valor)
@@ -164,7 +180,7 @@ def construir_vista() -> None:
         with ui.element('table').classes('pc-pump-table text-left'):
             with ui.element('thead'):
                 with ui.element('tr'):
-                    for titulo in ('Punto', 'Caudal (m³/h)', 'Altura (m)', ''):
+                    for titulo in ('#', 'Caudal (m³/h)', 'Altura (m)', ''):
                         with ui.element('th'):
                             ui.label(titulo)
             with ui.element('tbody'):
@@ -253,6 +269,18 @@ def construir_vista() -> None:
                                     lambda e, clave=clave: editar_instalacion(clave, e.value))
                 with ui.card().classes('pc-panel w-full'):
                     encabezado_seccion('Curva de la bomba', 'Los datos que ponen todo en marcha.', 'ssid_chart')
+                    ui.label('Datos generales del escenario (opcionales)').classes('text-sm font-semibold')
+                    with ui.element('div').classes('pc-bomba-grid'):
+                        for clave, etiqueta in (
+                            ('potencia_hp', 'Potencia (HP)'),
+                            ('altura_maxima_m', 'Hmax (m)'),
+                            ('caudal_maximo_m3h', 'Qmax (m³/h)'),
+                        ):
+                            entrada(clave, etiqueta, sesion.datos_bomba[clave],
+                                    lambda e, clave=clave: editar_dato_bomba(clave, e.value))
+                    ui.label('Potencia nominal del motor, altura máxima y caudal máximo. '
+                             'Son referencias: Hmax y Qmax no forman un mismo punto. '
+                             'El cálculo usa los puntos Q–H de abajo.').classes('text-xs text-slate-600')
                     ui.label('De 3 a 10 puntos: caudal creciente y altura no creciente.').classes(
                         'text-sm text-slate-600'
                     )
@@ -265,12 +293,18 @@ def construir_vista() -> None:
                                         if proyecto.error_objetivo else None).props('outlined inputmode=decimal').classes('w-full')
                     metas()
             with ui.element('section').classes('pc-stage'):
+                with ui.element('div').classes('pc-view-switch'):
+                    ui.label('Visualización del agua').classes('pc-view-switch-label')
+                    ui.toggle(['3D', '2D'], value='3D', on_change=lambda e: cambiar_vista(e.value)).props(
+                        'unelevated aria-label="Cambiar visualización entre 3D y 2D"'
+                    ).mark('selector-vista')
                 with ui.element('div').classes('pc-scenes') as vistas_escenas:
                     for nombre, estado_sesion in proyecto.sesiones.items():
-                        escenas[nombre] = VistaAnimacion(estado_sesion, nombre)
+                        escenas[nombre] = VistaAnimacion(estado_sesion, nombre, '3D')
                         escenas[nombre].contenedor.set_visibility(nombre == 'A')
                 comparacion()
                 resultados()
         with ui.element('footer').classes('pc-footer'):
             ui.html('<strong>PumpCalc</strong> · Entender el flujo cambia la perspectiva.')
-            ui.label('Modelo educativo · Niveles fijos · Los resultados no certifican una instalación real.')
+            ui.label('Modelo educativo · Cálculo estacionario · Visualización ilustrativa · '
+                     'Los resultados no certifican una instalación real.')

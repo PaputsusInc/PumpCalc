@@ -1,15 +1,15 @@
 # PumpCalc
 
-PumpCalc es un simulador web local en Python y NiceGUI para explorar el caudal de una bomba en una instalación simple. Incluye animación 2D vinculada a la velocidad calculada, comparación de escenarios A/B y explicación de interpolación lineal, Colebrook por punto fijo y bisección.
+PumpCalc es un simulador web local en Python y NiceGUI para explorar el caudal de una bomba en una instalación simple. Incluye vistas 2D y 3D del agua vinculadas a la velocidad calculada, comparación de escenarios A/B y explicación de interpolación lineal, Colebrook por punto fijo y bisección.
 **Estado al 11 de noviembre de 2026:** paso 9 completado con instalación limpia, pruebas automatizadas y aceptación visual comunicada por el usuario. La evidencia y el alcance de esa aceptación están en el [informe de verificación](VALIDACION_FINAL.md).
 
-Después de ese cierre se incorporó, por solicitud del usuario, una nueva presentación visual de laboratorio: azul profundo, turquesa y lima, controles junto a la simulación, indicadores destacados y escenas sobre fondo oscuro. El tema local está en [tema.py](../pumpcalc/tema.py). Las 282 pruebas pasan con el rediseño; su apariencia aún no ha sido observada directamente por el agente ni aceptada de nuevo por el usuario. La aceptación anterior corresponde a la versión de cierre.
+Después de ese cierre se incorporó, por solicitud del usuario, una presentación visual de laboratorio y una vista 3D interactiva además de la 2D. El tema local está en [tema.py](../pumpcalc/tema.py); la escena 3D en [escena3d.py](../pumpcalc/escena3d.py). Las 293 pruebas pasan y la vista 3D se revisó en el navegador local. La aceptación anterior corresponde a la versión de cierre.
 
 Fuentes de verdad: [propuesta v4](../Baseline%20y%20pasos/PumpCalc%20propuesta%20v4.docx), [línea base con animación](../Baseline%20y%20pasos/PumpCalc_linea_base_Codex_con_animacion.md) y [plan de desarrollo por pasos](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md). La propuesta y la línea base fijan el producto y los cálculos; el plan establece el orden de implementación y verificación. Los documentos de `docs` desarrollan esas fuentes y no las sustituyen.
 
 ## Estado del repositorio y de esta documentación
 
-Los documentos de esta carpeta describen la especificación vigente. La aplicación [app.py](../app.py) incorpora el motor de cálculo, los escenarios A/B independientes, las curvas, el detalle numérico, la animación 2D y la meta común. Usa NiceGUI 4.0.0 y pytest 9.2.0, fijados en [requirements.txt](../requirements.txt), con Python 3.13.7 en Windows. La guía de arranque está en [Instalación local](INSTALACION_LOCAL.md) y las comprobaciones reales y la aceptación manual en [avance](avance.md).
+La aplicación [app.py](../app.py) incorpora el motor de cálculo, los escenarios A/B independientes, las curvas, el detalle numérico, las vistas de animación 2D/3D y la meta común. Usa NiceGUI 4.0.0 y pytest 9.2.0, fijados en [requirements.txt](../requirements.txt), con Python 3.13.7 en Windows. La guía de arranque está en [Instalación local](INSTALACION_LOCAL.md) y las comprobaciones anteriores en [avance](avance.md).
 
 El código anterior se conserva: [main.py](../main.py) inicia CustomTkinter, [hydraulics.py](../pumpcalc/hydraulics.py) usa Hazen–Williams y [persistencia.py](../pumpcalc/persistencia.py) usa SQLite. La aplicación web utiliza los módulos nuevos de validación, interpolación, fricción, pérdidas y bisección. Permite copiar A en B, cargar tres ejemplos en el escenario activo y comparar resultados y animaciones con una escala común. La meta solo cambia su evaluación. Las dependencias de la aplicación antigua no forman parte del nuevo entorno.
 
@@ -101,7 +101,7 @@ F(Q) = Hb(Q) − Hs(Q)
 
 Sin cambio de signo se informa la posición relativa de las curvas en el intervalo disponible. Si se agotan iteraciones, se informa falta de convergencia. Ninguna de esas situaciones se sustituye por caudal cero. La cota mide error numérico del solver, no incertidumbre física.
 
-La gráfica une los nodos de bomba con segmentos rectos y muestra 150 muestras del sistema en su dominio. El marcador viene directamente del solver. La animación mantiene niveles fijos y mueve trazas según el tiempo transcurrido con `s(v) = 240v/(v+2)` px/s. El grosor crece con D mediante `8 + 12 log₂(D/0,01)` px, con D en metros. Ambas escalas son comunes a A/B. La longitud modifica el recorrido y el desnivel mueve el depósito de destino. El esquema muestra la rugosidad, K y las pérdidas calculadas. Los niveles quedan fijos durante cada escenario. Pausar y reanudar controlan el movimiento de las trazas.
+La gráfica une los nodos de bomba con segmentos rectos y muestra 150 muestras del sistema en su dominio. El marcador viene directamente del solver. En 2D, la animación mantiene niveles fijos y mueve trazas según el tiempo transcurrido con `s(v) = 240v/(v+2)` px/s. El grosor crece con D mediante `8 + 12 log₂(D/0,01)` px, con D en metros. Ambas escalas son comunes a A/B. La longitud modifica el recorrido y el desnivel mueve el depósito de destino. El esquema muestra la rugosidad, K y las pérdidas calculadas. En 3D, la bomba procede del modelo Blender aportado; el agua baja en el depósito de succión y sube en el de descarga hasta sus cotas visuales de referencia. El volumen que baja y el que sube es igual en la geometría visible. Esta secuencia no calcula tiempo de llenado ni modifica el punto de operación. Se puede pausar, reanudar y reproducir de nuevo.
 
 ## Tutorial mínimo del motor
 

@@ -1,6 +1,6 @@
 # PumpCalc flujo arquitectura e interfaz
 
-**Estado documental:** especificación vigente, sincronizada el 10 de noviembre de 2026. Describe la entrega requerida; no certifica que el código existente ya la implemente.
+**Estado documental:** especificación sincronizada el 11 de noviembre de 2026 con la ampliación visual 3D solicitada después de la línea base.
 
 Fuentes de verdad: [propuesta v4](../Baseline%20y%20pasos/PumpCalc%20propuesta%20v4.docx), [línea base con animación](../Baseline%20y%20pasos/PumpCalc_linea_base_Codex_con_animacion.md) y [plan de desarrollo por pasos](../Baseline%20y%20pasos/PumpCalc_plan_de_desarrollo_por_pasos.md). La propuesta y la línea base fijan el producto y los cálculos; el plan establece el orden de implementación y verificación. Los documentos de `docs` desarrollan esas fuentes y no las sustituyen.
 
@@ -68,7 +68,7 @@ Pausar es un control visual independiente del estado hidráulico. Editar cualqui
 
 La escena mostrará agua azul dentro de una tubería llena y pequeñas trazas o partículas que recorran continuamente su interior desde el origen hasta el destino. El movimiento deberá ser perceptible durante el uso, sin depender de una imagen o un video precalculado. La tubería se ensancha con el diámetro. La longitud cambia el recorrido y el desnivel mueve el depósito de destino. La escena muestra la rugosidad, K y las pérdidas asociadas. El esquema usa una escala ilustrativa.
 
-Los niveles de los depósitos permanecerán fijos. La animación representará el flujo estacionario calculado, sin simular el llenado de tanques ni el arranque físico de la bomba. Se utilizará una escena prediseñada, sin editor de circuitos, dibujo libre, simulación 3D ni dinámica computacional de fluidos.
+Los niveles de los depósitos permanecerán fijos. La animación representará el flujo estacionario calculado, sin simular el llenado de tanques ni el arranque físico de la bomba. Se utilizará una escena prediseñada, sin editor de circuitos ni dibujo libre.
 
 ### Movimiento vinculado al modelo
 
@@ -90,8 +90,12 @@ Habrá un control **Pausar animación** y **Reanudar animación**. La pausa ser�
 
 Al comparar se mostrarán dos vistas compactas de la misma escena, con las etiquetas de Q, v y D. Copiar A en B producirá inicialmente el mismo movimiento; al modificar B, A conservará su configuración y resultado. El usuario podrá ver qué cambia sin perder la referencia inicial.
 
+La escena 2D se implementa con `ui.interactive_image`, con una capa para la instalación y otra para las trazas. `ui.timer` actualiza desde Python la capa de trazas según el tiempo transcurrido.
 
-La escena se implementará con `ui.interactive_image`, con una capa para la instalación y otra para las trazas. `ui.timer` actualizará desde Python la capa de trazas según el tiempo transcurrido, como exige el paso 7.
+### Vista 3D incorporada después de la línea base
+
+El usuario puede cambiar entre 2D y 3D. La vista 3D muestra dos depósitos abiertos, la bomba extraída del archivo Blender aportado, tubería y agua en movimiento. Mientras el depósito de descarga se llena, el de succión baja con un volumen visual equivalente y conserva sumergida la toma. El ritmo relativo depende de la velocidad del punto de operación; al llegar a las cotas visuales de referencia, el movimiento termina. Se puede reproducir de nuevo. El cálculo sigue siendo estacionario y sus niveles de entrada no cambian con esa secuencia. La geometría se comprime para caber en pantalla y no es una escala métrica. En Q = 0 el agua queda quieta; sin punto válido se suspende el movimiento y se informa el estado. Se puede girar y acercar la cámara. El tiempo, los niveles finales y la parada visual no son predicciones hidráulicas ni se incorpora dinámica computacional de fluidos.
+
 
 ## Verificación de la interfaz
 

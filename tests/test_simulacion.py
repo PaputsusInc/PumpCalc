@@ -120,3 +120,29 @@ def test_dos_sesiones_no_comparten_entradas_curva_ni_resultado():
     assert a.entradas['diametro_mm'] == '25'
     assert a.puntos[0][1] == '35'
     assert a.estado == 'solucion'
+
+
+def test_datos_generales_se_validan_sin_modificar_el_calculo_y_se_copian():
+    sesion = sesion_calculada()
+    revision = sesion.revision
+    resultado = sesion.resultado
+    sesion.editar_dato_bomba('potencia_hp', '1,5')
+    sesion.editar_dato_bomba('altura_maxima_m', '35')
+    sesion.editar_dato_bomba('caudal_maximo_m3h', '6')
+    assert sesion.errores_datos_bomba == {}
+    assert sesion.revision == revision
+    assert sesion.resultado is resultado
+    copia = sesion.copiar()
+    assert copia.datos_bomba == sesion.datos_bomba
+    copia.editar_dato_bomba('potencia_hp', '2')
+    assert sesion.datos_bomba['potencia_hp'] == '1,5'
+
+    sesion.editar_dato_bomba('altura_maxima_m', '34')
+    sesion.editar_dato_bomba('caudal_maximo_m3h', '4')
+    sesion.editar_dato_bomba('potencia_hp', 'abc')
+    assert set(sesion.errores_datos_bomba) == {
+        'altura_maxima_m', 'caudal_maximo_m3h', 'potencia_hp',
+    }
+    assert sesion.resultado is resultado
+    sesion.cargar_base()
+    assert all(not valor for valor in sesion.datos_bomba.values())

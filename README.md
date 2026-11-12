@@ -18,11 +18,13 @@ Con el servidor en ejecución, abre <http://127.0.0.1:8080> en el navegador. Par
 
 1. Abre el **Caso base** en A. La tubería mide 40 m, su diámetro interno es de 25 mm y el desnivel es de 12 m. El caudal estimado es de aproximadamente 3,765450 m³/h.
 2. Pulsa **Copiar A en B**, cambia el diámetro de B a 32 mm y activa **Comparar A y B**. Espera el recálculo automático o pulsa **Simular**.
-3. Compara las cifras y las escenas. En B pasan unos 4,381752 m³/h, pero el agua avanza a 1,513406 m/s frente a 2,130809 m/s en A. El área de la tubería crece más que el caudal, así que la velocidad disminuye.
+3. Compara las cifras y las escenas. El selector **3D / 2D** cambia ambas vistas sin alterar el cálculo. En 3D puedes girar la instalación y restablecer la cámara. En B pasan unos 4,381752 m³/h, pero el agua avanza a 1,513406 m/s frente a 2,130809 m/s en A. El área de la tubería crece más que el caudal, así que la velocidad disminuye.
 4. Vuelve a copiar A en B y cambia únicamente la longitud a 80 m. El recorrido dibujado se alarga y las trazas se ralentizan. También puedes cambiar el desnivel para mover el depósito de destino, o cambiar la rugosidad y K para observar las pérdidas indicadas en la escena.
 5. Abre **Detalle numérico** para ver el tramo de interpolación, el residuo y la cota de bisección, y las iteraciones de Colebrook cuando correspondan. Carga **Sin intersección** en B para ver cómo se presenta un caso sin cruce dentro del intervalo de la curva de la bomba.
 
-La curva de demostración es ficticia. Cada escenario fija los niveles de los depósitos durante la simulación. La animación usa una escala ilustrativa de velocidad y geometría. A y B se guardan en memoria mientras la página está abierta.
+La curva de demostración es ficticia. El cálculo hidráulico es estacionario y usa niveles de referencia fijos. La vista 2D mantiene esos niveles; la 3D muestra una transferencia ilustrativa: baja el nivel en succión y sube en descarga, con rapidez relativa dependiente de la velocidad calculada. «Reproducir de nuevo» restablece la secuencia. Los niveles mostrados y la parada visual no predicen un tiempo de llenado ni una parada física de la bomba. Si Q = 0 hay solución sin movimiento; si faltan datos válidos o no hay cruce, se suspende el movimiento sin suponer Q = 0. La vista 3D requiere WebGL en el navegador. A y B se guardan en memoria mientras la página está abierta.
+
+En «Curva de la bomba» puedes anotar opcionalmente la potencia nominal del motor (HP), la altura máxima Hmax (m) y el caudal máximo Qmax (m³/h). Son datos de referencia independientes para A y B: se copian con «Copiar A en B» y se muestran en la comparación. No sustituyen los pares caudal–altura ni modifican el cálculo. Hmax y Qmax no representan un mismo punto de funcionamiento.
 
 ## Cómo funciona el cálculo
 
@@ -73,7 +75,7 @@ Aquí `replace` crea un segundo escenario a partir de A, con el diámetro expres
 | Arranque y vista | [app.py](app.py), [vista.py](pumpcalc/vista.py), [tema.py](pumpcalc/tema.py) | Abren NiceGUI y conectan el formulario con los resultados. |
 | Edición y comparación | [simulacion.py](pumpcalc/simulacion.py), [comparacion.py](pumpcalc/comparacion.py), [ejemplos.py](pumpcalc/ejemplos.py) | Conservan entradas independientes por escenario y recalculan tras 200 ms sin cambios válidos. La meta se compara con el caudal calculado. |
 | Resultados y gráficas | [resultados.py](pumpcalc/resultados.py), [presentacion.py](pumpcalc/presentacion.py), [detalle.py](pumpcalc/detalle.py), [panel_comparacion.py](pumpcalc/panel_comparacion.py) | Presentan el resultado vigente y las iteraciones. La vista individual y la comparación comparten la preparación de las curvas. |
-| Animación | [animacion.py](pumpcalc/animacion.py), [escena.py](pumpcalc/escena.py) | Comparten el recorrido entre el dibujo y las partículas. El temporizador avanza las trazas con la velocidad calculada. |
+| Animación | [animacion.py](pumpcalc/animacion.py), [escena.py](pumpcalc/escena.py), [escena3d.py](pumpcalc/escena3d.py), [assets](pumpcalc/assets) | La vista 2D mueve trazas desde Python. La vista 3D dibuja agua, bomba y depósitos con Three.js y anima el flujo en el navegador según la velocidad calculada. |
 | Versión de escritorio anterior | [main.py](main.py), [pumpcalc/ui/](pumpcalc/ui/), [casos_uso.py](pumpcalc/casos_uso.py), [hydraulics.py](pumpcalc/hydraulics.py), [persistencia.py](pumpcalc/persistencia.py) | Usa CustomTkinter, calcula dos condiciones del tanque mediante Hazen–Williams y guarda escenarios en SQLite. |
 
 ## Pruebas
