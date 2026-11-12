@@ -1,5 +1,79 @@
 # PumpCalc
 
+## Guía de estudio para la sustentación: Blender, escena 3D y rendimiento
+
+Esta sección sigue el código que produce y presenta la vista 3D. Para explicarla en la sustentación, conviene separar **el modelo que se exporta una vez desde Blender** de **la escena que la aplicación construye al abrir un escenario**. Los archivos clave son [`generar_instalacion_base.py`](tools/blender/generar_instalacion_base.py), [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py), [`escena3d.py`](pumpcalc/escena3d.py) y los componentes JavaScript de [`pumpcalc/assets/`](pumpcalc/assets/).
+
+### 1. Qué hace Blender en este proyecto
+
+Blender se usa como herramienta de preparación de modelos, **no como motor de la animación web**. Hay dos scripts con funciones diferentes:
+
+| Script | Entrada y trabajo | Salida | Papel en la aplicación |
+| --- | --- | --- | --- |
+| [`generar_instalacion_base.py`](tools/blender/generar_instalacion_base.py) | Limpia la escena cargada en memoria y crea una instalación de referencia con suelo, dos depósitos, tuberías, bomba y rótulos. | `assets/modelos/referencia/instalacion_base.glb` | Sirve como base editable de referencia; la vista web no carga este archivo. |
+| [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py) | Abre el archivo Blender aportado, selecciona las mallas bajo `GRUPO / 04 Bomba` y la malla adicional llamada `Cylinder`, y ajusta sus acabados. | `assets/modelos/bomba_usuario.glb` | Es el modelo que carga la vista 3D web. |
+
+El primer script agrupa los objetos en colecciones con nombres como `01 Suelo y bases`, `02 Depósito de succión` y `04 Bomba`. Usa cubos para bases y depósitos, cilindros para tramos rectos, superficies curvas para codos y materiales con color, transparencia, metalicidad y rugosidad. Sus fórmulas iniciales corresponden al **caso base**: longitud 40 m, diámetro 0,025 m y desnivel 12 m. Exporta en GLB, un archivo que reúne geometría y materiales. Sus rótulos y referencias de conexión son auxiliares de esa base.
+
+El segundo script recorre la jerarquía de padres para identificar las piezas de la bomba; si no encuentra ninguna, termina con un error. Añade un bisel pequeño a ciertas mallas para suavizar cantos y ajusta `Metallic` y `Roughness` de sus materiales. Exporta **solo los objetos seleccionados**, con materiales y transformaciones aplicadas (`use_selection=True`, `export_apply=True`). Por eso el GLB final contiene la bomba, mientras que los depósitos y las tuberías variables se crean en la aplicación. Los dos scripts usan opciones distintas de orientación de ejes al exportar (`export_yup=True` en la referencia y `export_yup=False` en la bomba); son opciones del código para cada salida, no parámetros hidráulicos.
+
+Desde la carpeta `PumpCalc`, los comandos documentados por los scripts son:
+
+```bash
+blender --background --python tools/blender/generar_instalacion_base.py
+blender -b ../Untitled.blend --python tools/blender/exportar_bomba_usuario.py
+```
+
+El segundo comando requiere ese archivo `.blend` en la ruta indicada. La aplicación normal ya utiliza el GLB exportado y **no necesita abrir Blender** al iniciarse.
+
+### 2. Cómo se configura y actualiza la escena web
+
+En [`escena3d.py`](pumpcalc/escena3d.py), NiceGUI crea una `ui.scene` con dimensiones iniciales de 840 × 470, sin cuadrícula, con fondo `#080f2b`, cámara en perspectiva de 42° y objetivo de **30 FPS**. La cámara inicia en `(2.5, -11, 5.6)` mirando hacia `(0, 0, 1.28)`; «Restablecer cámara» vuelve a esa posición. El archivo `bomba_usuario.glb` se sirve en `/modelos/bomba_usuario.glb` y se inserta con `escena.gltf(...)`. También se colocan tres luces de acento, las etiquetas, el suelo, la base, ambos depósitos y la tubería.
+
+La instalación visible se **reconstruye cuando cambia su geometría**. `geometria_3d(instalacion)` traduce las entradas a coordenadas de exhibición: el desnivel eleva el nivel de destino, la longitud desplaza el depósito de destino y el diámetro aumenta el radio dibujado. Las expresiones con logaritmos comprimen esos cambios para que quepan en pantalla; **no son una escala métrica**. La bomba GLB permanece como modelo fijo. La rugosidad y el coeficiente `K` intervienen en el cálculo hidráulico, pero esta función no los convierte en formas 3D.
+
+Estas son las tres transformaciones exactas del código, con `L` y `Δz` en metros y `D` convertido a metros:
+
+```text
+altura visual de destino = 1 + 2,45 × ln(1 + Δz) / ln(101)
+posición visual de destino = 3,9 + 0,42 × ln(1 + L/10) / ln(101)
+radio visual de tubería = 0,082 + 0,052 × log₍₂₀₎(D/0,01)
+```
+
+Por ejemplo, duplicar `L` desplaza el depósito en pantalla, pero no duplica la distancia dibujada. El valor real de `L` sí entra en las ecuaciones hidráulicas; esta transformación solo decide la forma de mostrarlo.
+
+La tubería se arma con cilindros rectos y codos de Bézier. Cada tramo muestra una envolvente exterior y un interior cian; se agregan dos `CanalAgua` para representar el movimiento dentro de aspiración y descarga. Los depósitos se construyen con base, postes, bordes y paneles transparentes. La escena usa un `SueloLuminoso` y materiales o shaders del navegador para los efectos visuales. Todo eso está definido en Python y en los archivos JavaScript de `pumpcalc/assets/`; no procede del GLB de la bomba.
+
+**Cadena de datos que se puede explicar en voz alta:** entradas del escenario → cálculo del punto de operación → velocidad del agua `v` → `rapidez_3d(v) = 2,8v/(v + 1,8)` → movimiento visual. Esa rapidez se mide en **unidades visuales por segundo**, no en m/s: conserva la comparación entre escenarios, pero comprime la velocidad. Python envía al navegador el estado de flujo, pausa y revisión; los fotogramas del agua se animan allí mediante JavaScript, `performance.now()` y Three.js. `AguaEnTuberia` mueve 65 partículas por el recorrido; `CanalAgua` anima el patrón luminoso; `SuperficieAgua` baja el nivel de succión y `TanqueLlenado` sube el de descarga y dibuja el chorro.
+
+El código hace coincidir **el volumen visual** que baja en succión con el que sube en descarga, usando las secciones dibujadas de ambos depósitos. La toma queda sumergida al final de la secuencia. El progreso del llenado ilustrativo aumenta con `dt × rapidez × 0,045` y se detiene al llegar a 1; este factor es de presentación, **no calcula un tiempo físico de llenado**. La solución hidráulica usa niveles de referencia fijos. «Pausar» detiene el avance visual; «Reproducir de nuevo» reinicia la secuencia. Si el caudal válido es cero, no hay movimiento; si no existe un punto vigente, se desactiva el flujo. El navegador debe poder mostrar WebGL para esta vista.
+
+### 3. Cómo interpretar el análisis de tiempo y recursos
+
+El archivo reciente [`tools/perfil_rendimiento.py`](tools/perfil_rendimiento.py) mide el **funcionamiento de la escena 3D del caso base**, no la duración de un cálculo hidráulico ni el tiempo de llenado. Inicia PumpCalc y Chromium, abre la página a 1440 × 900, espera a que la escena esté visible, deja pasar 2 segundos de estabilización y toma una muestra de 10 segundos por defecto. Reinicia el flujo cada 8 segundos para mantener la animación activa. En Linux lee `/proc` para sumar el servidor y el árbol de procesos de Chromium; el controlador Node de Playwright queda fuera de esa suma. El navegador informa el renderizador WebGL empleado.
+
+En este equipo, el **12 de noviembre de 2026**, dos ejecuciones reales de 10 segundos en modo con ventana dieron:
+
+| Medida | Corrida 1 | Corrida 2 | Lectura para la sustentación |
+| --- | ---: | ---: | --- |
+| FPS observados | 26,3 | 25,3 | Aproximadamente 25–26 actualizaciones por segundo durante estas muestras. El objetivo configurado es 30 FPS; no significa que siempre se alcance. |
+| CPU promedio, servidor + Chromium | 47,5 % | 80,1 % | Consumo equivalente a 0,475 y 0,801 núcleos de CPU, respectivamente. Es porcentaje **de un núcleo**, no del procesador completo. |
+| Memoria máxima PSS, servidor + Chromium | 587,3 MiB | 588,7 MiB | Pico aproximado de memoria física atribuible a esos procesos en cada muestra. No es tamaño del GLB ni memoria de la GPU. |
+
+Las dos corridas informaron `ANGLE (Intel, Mesa Intel(R) Graphics (RPL-P), OpenGL 4.6)` como renderizador. **Interpretación de los FPS:** el perfilador registra las llamadas a `gl.clear` del lienzo WebGL y divide los intervalos registrados por el tiempo entre la primera y la última llamada. Es una aproximación a la frecuencia de actualización: 26,3 FPS equivalen a unos **38,0 ms por actualización**, y 25,3 FPS a unos **39,5 ms**. Con un objetivo de 30 FPS, el intervalo ideal sería 33,3 ms. Esta prueba muestra una escena animada cercana, aunque inferior, a ese objetivo en este equipo; no demuestra fluidez constante ni da los peores tiempos de cada fotograma.
+
+**Interpretación de CPU y memoria:** la CPU sale de la diferencia de tiempo de procesador acumulado en `/proc`, dividida por los segundos transcurridos. Puede superar 100 % si varios núcleos trabajan a la vez. La diferencia entre 47,5 % y 80,1 % muestra variación entre ejecuciones; no conviene presentarla como un consumo fijo. PSS reparte entre procesos la memoria de páginas compartidas y se consulta aproximadamente cada 0,25 segundos; el valor mostrado es el máximo observado, de modo que un pico más breve podría no quedar capturado. Estos números dependen del equipo, el renderizador, la carga del sistema, el tamaño de ventana y el modo de ejecución.
+
+Para repetir la medición en Linux, con Chromium, una sesión gráfica y Playwright disponibles, ejecuta desde `PumpCalc`:
+
+```bash
+.venv/bin/python tools/perfil_rendimiento.py --segundos 10
+```
+
+`--headless` permite ejecutarlo sin ventana, pero puede cambiar el renderizador y volver las cifras no comparables con las anteriores. La conclusión defendible es: **en estas dos muestras del caso base, la animación 3D rondó 25–26 FPS, usó menos de un núcleo de CPU en promedio y ocupó cerca de 588 MiB PSS entre servidor y navegador**. El script no mide arranque, latencia al editar entradas, duración del solucionador, consumo de GPU ni tiempo real de traslado del agua.
+
+## Acerca de PumpCalc
+
 PumpCalc es un simulador web local escrito en Python. Estima cuánto caudal entrega una bomba a través de una tubería entre dos depósitos abiertos. Puedes cambiar una condición de la instalación, comparar dos escenarios y ver tanto el movimiento del agua como los pasos del cálculo.
 
 ## Estructura del proyecto
@@ -114,3 +188,21 @@ La carpeta [tests](tests/) cubre casos numéricos de referencia, validación, es
 - [Guía de sustentación](docs/GUIA_SUSTENTACION.md).
 - [Informe de verificación y aceptación manual](docs/VALIDACION_FINAL.md).
 - [Registro de desarrollo](docs/avance.md).
+
+## Diagramas del código
+
+### Componentes del sistema
+
+![Componentes del sistema](docs/diagramas/01_componentes.svg)
+
+### Flujo del punto de operación
+
+![Flujo del punto de operación](docs/diagramas/02_flujo_operacion.svg)
+
+### Evaluación de F(Q)
+
+![Evaluación de F(Q)](docs/diagramas/03_evaluacion_f.svg)
+
+### Ciclo de una sesión
+
+![Ciclo de una sesión](docs/diagramas/04_ciclo_sesion.svg)
