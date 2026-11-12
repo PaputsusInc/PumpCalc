@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 COPY pumpcalc/ ./pumpcalc/
-COPY modelos/bomba_usuario.glb ./modelos/bomba_usuario.glb
+COPY assets/modelos/bomba_usuario.glb ./assets/modelos/bomba_usuario.glb
 
 EXPOSE 8080
 

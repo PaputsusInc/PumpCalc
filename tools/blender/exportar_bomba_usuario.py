@@ -1,6 +1,6 @@
 """Extrae la bomba del archivo Blender aportado y la prepara para la escena.
 
-Uso: blender -b ../Untitled.blend --python modelos/exportar_bomba_usuario.py
+Uso: blender -b ../Untitled.blend --python tools/blender/exportar_bomba_usuario.py
 El archivo fuente no se modifica. La instalación variable y el agua se dibujan
 en la aplicación; este GLB contiene solo la bomba y sus detalles.
 """
@@ -10,7 +10,7 @@ from pathlib import Path
 import bpy
 
 
-SALIDA = Path(__file__).with_name('bomba_usuario.glb')
+SALIDA = Path(__file__).resolve().parents[2] / 'assets' / 'modelos' / 'bomba_usuario.glb'
 RAIZ = 'GRUPO / 04 Bomba'
 
 

@@ -13,7 +13,7 @@ from pumpcalc.simulacion import SesionSimulacion
 
 
 ASSETS = Path(__file__).parent / 'assets'
-BOMBA_MODELO = Path(__file__).parents[1] / 'modelos' / 'bomba_usuario.glb'
+BOMBA_MODELO = Path(__file__).parents[1] / 'assets' / 'modelos' / 'bomba_usuario.glb'
 BOMBA_URL = app.add_static_file(local_file=BOMBA_MODELO, url_path='/modelos/bomba_usuario.glb')
 ANCHO_AGUA_ORIGEN = 2.05 - .15
 ANCHO_AGUA_DESTINO = 2.2 - .15

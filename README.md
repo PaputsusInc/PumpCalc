@@ -2,6 +2,18 @@
 
 PumpCalc es un simulador web local escrito en Python. Estima cuánto caudal entrega una bomba a través de una tubería entre dos depósitos abiertos. Puedes cambiar una condición de la instalación, comparar dos escenarios y ver tanto el movimiento del agua como los pasos del cálculo.
 
+## Estructura del proyecto
+
+| Carpeta | Contenido |
+| --- | --- |
+| `pumpcalc/` | Cálculo e interfaz web; `pumpcalc/assets/` contiene las animaciones 3D. |
+| `assets/modelos/` | Modelo GLB que usa la vista 3D; `referencia/` conserva la base anterior. |
+| `tools/blender/` | Scripts para generar o exportar los modelos, fuera de la aplicación en ejecución. |
+| `tests/` | Pruebas de la app web y del cálculo; `legacy/` reúne las de escritorio. |
+| `docs/` | Guías y documentación; `antecedentes/` guarda los documentos iniciales. |
+
+`app.py` inicia la aplicación web. `main.py` conserva la entrada de escritorio anterior.
+
 ## Instalación en Windows
 
 Necesitas Python 3.13.7, la versión verificada para este proyecto, y un navegador. Abre PowerShell en la carpeta de PumpCalc y ejecuta estos comandos. El primero crea el entorno virtual. El segundo instala NiceGUI y pytest con las versiones indicadas en [requirements.txt](requirements.txt).
@@ -85,7 +97,7 @@ Aquí `replace` crea un segundo escenario a partir de A, con el diámetro expres
 | Arranque y vista | [app.py](app.py), [vista.py](pumpcalc/vista.py), [tema.py](pumpcalc/tema.py) | Abren NiceGUI y conectan el formulario con los resultados. |
 | Edición y comparación | [simulacion.py](pumpcalc/simulacion.py), [comparacion.py](pumpcalc/comparacion.py), [ejemplos.py](pumpcalc/ejemplos.py) | Conservan entradas independientes por escenario y recalculan tras 200 ms sin cambios válidos. La meta se compara con el caudal calculado. |
 | Resultados y gráficas | [resultados.py](pumpcalc/resultados.py), [presentacion.py](pumpcalc/presentacion.py), [detalle.py](pumpcalc/detalle.py), [panel_comparacion.py](pumpcalc/panel_comparacion.py) | Presentan el resultado vigente y las iteraciones. La vista individual y la comparación comparten la preparación de las curvas. |
-| Animación | [animacion.py](pumpcalc/animacion.py), [escena.py](pumpcalc/escena.py), [escena3d.py](pumpcalc/escena3d.py), [assets](pumpcalc/assets) | La vista 2D mueve trazas desde Python. La vista 3D dibuja agua, bomba y depósitos con Three.js y anima el flujo en el navegador según la velocidad calculada. |
+| Animación | [animacion.py](pumpcalc/animacion.py), [escena.py](pumpcalc/escena.py), [escena3d.py](pumpcalc/escena3d.py), [animaciones](pumpcalc/assets), [modelo 3D](assets/modelos/bomba_usuario.glb) | La vista 2D mueve trazas desde Python. La vista 3D dibuja agua, bomba y depósitos con Three.js y anima el flujo en el navegador según la velocidad calculada. |
 | Versión de escritorio anterior | [main.py](main.py), [pumpcalc/ui/](pumpcalc/ui/), [casos_uso.py](pumpcalc/casos_uso.py), [hydraulics.py](pumpcalc/hydraulics.py), [persistencia.py](pumpcalc/persistencia.py) | Usa CustomTkinter, calcula dos condiciones del tanque mediante Hazen–Williams y guarda escenarios en SQLite. |
 
 ## Pruebas

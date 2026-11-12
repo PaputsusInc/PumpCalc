@@ -1,6 +1,6 @@
 """Exporta a GLB una base editable de la vista 3D del escenario A.
 
-Ejecutar con: blender --background --python modelos/generar_instalacion_base.py
+Ejecutar con: blender --background --python tools/blender/generar_instalacion_base.py
 Las coordenadas y proporciones siguen pumpcalc/escena3d.py. No sustituye la
 animación del agua ni la geometría variable de la aplicación.
 """
@@ -12,7 +12,7 @@ import bpy
 from mathutils import Vector
 
 
-SALIDA = Path(__file__).with_name('instalacion_base.glb')
+SALIDA = Path(__file__).resolve().parents[2] / 'assets' / 'modelos' / 'referencia' / 'instalacion_base.glb'
 NIVEL_ORIGEN = 1.0
 NIVEL_DESTINO = 1 + 2.45 * math.log1p(12) / math.log1p(100)
 X_DESTINO = 3.9 + 0.42 * math.log1p(40 / 10) / math.log1p(100)
