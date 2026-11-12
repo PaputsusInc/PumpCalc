@@ -1,66 +1,8 @@
 # PumpCalc
 
-## Guía de estudio para la sustentación: Blender, escena 3D y rendimiento
+### 1. Problema SItuación
+Software del proyecto final de Métodos Numéricos.
 
-Esta sección sigue **el código de la vista final y su medición**: [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py) extrae la bomba del archivo `.blend`; [`escena3d.py`](pumpcalc/escena3d.py) construye la instalación visible; los archivos de [`pumpcalc/assets/`](pumpcalc/assets/) animan el agua; y [`perfil_rendimiento.py`](tools/perfil_rendimiento.py) mide la escena. Los bloques de código siguientes están tomados de esos archivos y se explican para poder señalarlos durante la sustentación.
-
-### 1. Qué hace Blender en este proyecto
-
-Blender se usa para **extraer el modelo de la bomba del archivo aportado**. No calcula el flujo ni anima la vista web. Al ejecutarse con Blender sobre `../Untitled.blend`, el script [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py) identifica las mallas de `GRUPO / 04 Bomba` y una pieza adicional llamada `Cylinder`, ajusta biseles y materiales, y produce `assets/modelos/bomba_usuario.glb`. GLB reúne la geometría y los materiales para que el navegador los cargue.
-
-**Código real de selección y exportación de la bomba** en [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py):
-
-```python
-RAIZ = 'GRUPO / 04 Bomba'
-
-
-def pertenece_a_bomba(obj):
-    actual = obj
-    while actual is not None:
-        if actual.name == RAIZ:
-            return True
-        actual = actual.parent
-    return obj.name == 'Cylinder'  # detalle adicional en el archivo aportado
-
-
-partes = [obj for obj in bpy.data.objects if obj.type == 'MESH' and pertenece_a_bomba(obj)]
-if not partes:
-    raise RuntimeError('El archivo Blender no contiene las piezas de la bomba esperadas.')
-```
-
-`obj.type == 'MESH'` deja solo geometría exportable. `pertenece_a_bomba` sube por los padres hasta encontrar el grupo raíz; `Cylinder` es la excepción explícita del archivo aportado. Luego el script aplica este bisel:
-
-```python
-for obj in partes:
-    if obj.name != 'Cylinder' and len(obj.data.polygons) <= 24:
-        bisel = obj.modifiers.new('Cantos mecanizados', 'BEVEL')
-        bisel.width = .008 if 'tornillo' in obj.name.lower() else .014
-        bisel.segments = 2
-        bisel.affect = 'EDGES'
-```
-
-Este es el bloque de bisel del archivo: solo se aplica a mallas sencillas, con un ancho menor para tornillos. En el mismo recorrido, el código ajusta `Metallic` y `Roughness` del material según su nombre; eso cambia el aspecto bajo la luz, no el cálculo hidráulico. La selección y exportación final son:
-
-```python
-bpy.ops.object.select_all(action='DESELECT')
-for obj in partes:
-    obj.select_set(True)
-bpy.context.view_layer.objects.active = partes[0]
-bpy.ops.export_scene.gltf(
-    filepath=str(SALIDA), export_format='GLB', use_selection=True,
-    export_yup=False, export_apply=True, export_materials='EXPORT',
-)
-```
-
-La opción decisiva es `use_selection=True`: el archivo resultante contiene las mallas elegidas de la bomba y no la instalación completa.
-
-Desde la carpeta `PumpCalc`, este es el comando documentado por el script:
-
-```bash
-blender -b ../Untitled.blend --python tools/blender/exportar_bomba_usuario.py
-```
-
-El comando requiere ese archivo `.blend` en la ruta indicada. La aplicación normal ya utiliza el GLB exportado y **no necesita abrir Blender** al iniciarse.
 
 ### 2. Cómo se configura y actualiza la escena web
 
