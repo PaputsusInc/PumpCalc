@@ -1,5 +1,7 @@
 """Entrada de la aplicación web local de PumpCalc."""
 
+import os
+
 from nicegui import ui
 
 from pumpcalc.vista import construir_vista
@@ -13,8 +15,8 @@ def inicio() -> None:
 
 if __name__ == '__main__':
     ui.run(
-        host='127.0.0.1',
-        port=8080,
+        host=os.getenv('PUMPCALC_HOST', '127.0.0.1'),
+        port=int(os.getenv('PUMPCALC_PORT', '8080')),
         title='PumpCalc · Simulador de bombeo',
         language='es',
         reload=False,

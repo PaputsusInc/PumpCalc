@@ -14,6 +14,16 @@ python -m venv .venv
 
 Con el servidor en ejecución, abre <http://127.0.0.1:8080> en el navegador. Para detenerlo, pulsa `Ctrl+C` en la terminal. En las siguientes sesiones puedes arrancar con el tercer comando.
 
+## Ejecutar con Docker
+
+Desde la carpeta de PumpCalc:
+
+```bash
+docker compose up --build
+```
+
+Abre <http://localhost:8080>. Para detenerlo, pulsa `Ctrl+C`; para retirar el contenedor, ejecuta `docker compose down`. También puedes construir y ejecutar sin Compose con `docker build -t pumpcalc .` y `docker run --rm -p 8080:8080 pumpcalc`.
+
 ## Primer experimento
 
 1. Abre el **Caso base** en A. La tubería mide 40 m, su diámetro interno es de 25 mm y el desnivel es de 12 m. El caudal estimado es de aproximadamente 3,765450 m³/h.
