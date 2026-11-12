@@ -2,55 +2,216 @@
 
 ## Guía de estudio para la sustentación: Blender, escena 3D y rendimiento
 
-Esta sección sigue el código que produce y presenta la vista 3D. Para explicarla en la sustentación, conviene separar **el modelo que se exporta una vez desde Blender** de **la escena que la aplicación construye al abrir un escenario**. Los archivos clave son [`generar_instalacion_base.py`](tools/blender/generar_instalacion_base.py), [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py), [`escena3d.py`](pumpcalc/escena3d.py) y los componentes JavaScript de [`pumpcalc/assets/`](pumpcalc/assets/).
+Esta sección sigue **el código de la vista final y su medición**: [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py) extrae la bomba del archivo `.blend`; [`escena3d.py`](pumpcalc/escena3d.py) construye la instalación visible; los archivos de [`pumpcalc/assets/`](pumpcalc/assets/) animan el agua; y [`perfil_rendimiento.py`](tools/perfil_rendimiento.py) mide la escena. Los bloques de código siguientes están tomados de esos archivos y se explican para poder señalarlos durante la sustentación.
 
 ### 1. Qué hace Blender en este proyecto
 
-Blender se usa como herramienta de preparación de modelos, **no como motor de la animación web**. Hay dos scripts con funciones diferentes:
+Blender se usa para **extraer el modelo de la bomba del archivo aportado**. No calcula el flujo ni anima la vista web. Al ejecutarse con Blender sobre `../Untitled.blend`, el script [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py) identifica las mallas de `GRUPO / 04 Bomba` y una pieza adicional llamada `Cylinder`, ajusta biseles y materiales, y produce `assets/modelos/bomba_usuario.glb`. GLB reúne la geometría y los materiales para que el navegador los cargue.
 
-| Script | Entrada y trabajo | Salida | Papel en la aplicación |
-| --- | --- | --- | --- |
-| [`generar_instalacion_base.py`](tools/blender/generar_instalacion_base.py) | Limpia la escena cargada en memoria y crea una instalación de referencia con suelo, dos depósitos, tuberías, bomba y rótulos. | `assets/modelos/referencia/instalacion_base.glb` | Sirve como base editable de referencia; la vista web no carga este archivo. |
-| [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py) | Abre el archivo Blender aportado, selecciona las mallas bajo `GRUPO / 04 Bomba` y la malla adicional llamada `Cylinder`, y ajusta sus acabados. | `assets/modelos/bomba_usuario.glb` | Es el modelo que carga la vista 3D web. |
+**Código real de selección y exportación de la bomba** en [`exportar_bomba_usuario.py`](tools/blender/exportar_bomba_usuario.py):
 
-El primer script agrupa los objetos en colecciones con nombres como `01 Suelo y bases`, `02 Depósito de succión` y `04 Bomba`. Usa cubos para bases y depósitos, cilindros para tramos rectos, superficies curvas para codos y materiales con color, transparencia, metalicidad y rugosidad. Sus fórmulas iniciales corresponden al **caso base**: longitud 40 m, diámetro 0,025 m y desnivel 12 m. Exporta en GLB, un archivo que reúne geometría y materiales. Sus rótulos y referencias de conexión son auxiliares de esa base.
+```python
+RAIZ = 'GRUPO / 04 Bomba'
 
-El segundo script recorre la jerarquía de padres para identificar las piezas de la bomba; si no encuentra ninguna, termina con un error. Añade un bisel pequeño a ciertas mallas para suavizar cantos y ajusta `Metallic` y `Roughness` de sus materiales. Exporta **solo los objetos seleccionados**, con materiales y transformaciones aplicadas (`use_selection=True`, `export_apply=True`). Por eso el GLB final contiene la bomba, mientras que los depósitos y las tuberías variables se crean en la aplicación. Los dos scripts usan opciones distintas de orientación de ejes al exportar (`export_yup=True` en la referencia y `export_yup=False` en la bomba); son opciones del código para cada salida, no parámetros hidráulicos.
 
-Desde la carpeta `PumpCalc`, los comandos documentados por los scripts son:
+def pertenece_a_bomba(obj):
+    actual = obj
+    while actual is not None:
+        if actual.name == RAIZ:
+            return True
+        actual = actual.parent
+    return obj.name == 'Cylinder'  # detalle adicional en el archivo aportado
+
+
+partes = [obj for obj in bpy.data.objects if obj.type == 'MESH' and pertenece_a_bomba(obj)]
+if not partes:
+    raise RuntimeError('El archivo Blender no contiene las piezas de la bomba esperadas.')
+```
+
+`obj.type == 'MESH'` deja solo geometría exportable. `pertenece_a_bomba` sube por los padres hasta encontrar el grupo raíz; `Cylinder` es la excepción explícita del archivo aportado. Luego el script aplica este bisel:
+
+```python
+for obj in partes:
+    if obj.name != 'Cylinder' and len(obj.data.polygons) <= 24:
+        bisel = obj.modifiers.new('Cantos mecanizados', 'BEVEL')
+        bisel.width = .008 if 'tornillo' in obj.name.lower() else .014
+        bisel.segments = 2
+        bisel.affect = 'EDGES'
+```
+
+Este es el bloque de bisel del archivo: solo se aplica a mallas sencillas, con un ancho menor para tornillos. En el mismo recorrido, el código ajusta `Metallic` y `Roughness` del material según su nombre; eso cambia el aspecto bajo la luz, no el cálculo hidráulico. La selección y exportación final son:
+
+```python
+bpy.ops.object.select_all(action='DESELECT')
+for obj in partes:
+    obj.select_set(True)
+bpy.context.view_layer.objects.active = partes[0]
+bpy.ops.export_scene.gltf(
+    filepath=str(SALIDA), export_format='GLB', use_selection=True,
+    export_yup=False, export_apply=True, export_materials='EXPORT',
+)
+```
+
+La opción decisiva es `use_selection=True`: el archivo resultante contiene las mallas elegidas de la bomba y no la instalación completa.
+
+Desde la carpeta `PumpCalc`, este es el comando documentado por el script:
 
 ```bash
-blender --background --python tools/blender/generar_instalacion_base.py
 blender -b ../Untitled.blend --python tools/blender/exportar_bomba_usuario.py
 ```
 
-El segundo comando requiere ese archivo `.blend` en la ruta indicada. La aplicación normal ya utiliza el GLB exportado y **no necesita abrir Blender** al iniciarse.
+El comando requiere ese archivo `.blend` en la ruta indicada. La aplicación normal ya utiliza el GLB exportado y **no necesita abrir Blender** al iniciarse.
 
 ### 2. Cómo se configura y actualiza la escena web
 
 En [`escena3d.py`](pumpcalc/escena3d.py), NiceGUI crea una `ui.scene` con dimensiones iniciales de 840 × 470, sin cuadrícula, con fondo `#080f2b`, cámara en perspectiva de 42° y objetivo de **30 FPS**. La cámara inicia en `(2.5, -11, 5.6)` mirando hacia `(0, 0, 1.28)`; «Restablecer cámara» vuelve a esa posición. El archivo `bomba_usuario.glb` se sirve en `/modelos/bomba_usuario.glb` y se inserta con `escena.gltf(...)`. También se colocan tres luces de acento, las etiquetas, el suelo, la base, ambos depósitos y la tubería.
 
+Esta línea registra el archivo de bomba para que el navegador pueda solicitarlo por URL:
+
+```python
+BOMBA_MODELO = Path(__file__).parents[1] / 'assets' / 'modelos' / 'bomba_usuario.glb'
+BOMBA_URL = app.add_static_file(local_file=BOMBA_MODELO, url_path='/modelos/bomba_usuario.glb')
+```
+
+`BOMBA_MODELO` es la ruta local al GLB exportado y `BOMBA_URL` es la dirección que usará `escena.gltf(BOMBA_URL)` más abajo.
+
 La instalación visible se **reconstruye cuando cambia su geometría**. `geometria_3d(instalacion)` traduce las entradas a coordenadas de exhibición: el desnivel eleva el nivel de destino, la longitud desplaza el depósito de destino y el diámetro aumenta el radio dibujado. Las expresiones con logaritmos comprimen esos cambios para que quepan en pantalla; **no son una escala métrica**. La bomba GLB permanece como modelo fijo. La rugosidad y el coeficiente `K` intervienen en el cálculo hidráulico, pero esta función no los convierte en formas 3D.
 
 Estas son las tres transformaciones exactas del código, con `L` y `Δz` en metros y `D` convertido a metros:
 
-```text
-altura visual de destino = 1 + 2,45 × ln(1 + Δz) / ln(101)
-posición visual de destino = 3,9 + 0,42 × ln(1 + L/10) / ln(101)
-radio visual de tubería = 0,082 + 0,052 × log₍₂₀₎(D/0,01)
+```python
+def geometria_3d(instalacion: Instalacion) -> Geometria3D:
+    """Comprime L, Δz y D visualmente, manteniendo el orden y las cotas relativas."""
+    desnivel = 2.45 * math.log1p(instalacion.desnivel_m) / math.log1p(100)
+    distancia = 0.42 * math.log1p(instalacion.longitud_m / 10) / math.log1p(100)
+    radio = 0.082 + 0.052 * math.log(instalacion.diametro_m / 0.01, 20)
+    return Geometria3D(1.0, 1.0 + desnivel, 3.9 + distancia, radio)
 ```
 
-Por ejemplo, duplicar `L` desplaza el depósito en pantalla, pero no duplica la distancia dibujada. El valor real de `L` sí entra en las ecuaciones hidráulicas; esta transformación solo decide la forma de mostrarlo.
+`math.log1p(x)` calcula `ln(1 + x)`. La función devuelve nivel de succión fijo `1.0`, nivel de descarga elevado por `desnivel`, posición horizontal desplazada por `distancia` y radio visible. Por ejemplo, duplicar `L` desplaza el depósito en pantalla, pero no duplica la distancia dibujada. El valor real de `L` sí entra en las ecuaciones hidráulicas; esta transformación solo decide la forma de mostrarlo.
+
+Esta es la configuración inicial exacta de la escena en la clase `VistaEscena3D`:
+
+```python
+self.escena = ui.scene(
+    width=840, height=470, grid=False, background_color='#080f2b',
+    camera=ui.scene.perspective_camera(fov=42), fps=30,
+).classes('pc-three-canvas').style('width:100%; height:100%;').props(
+    'role=img aria-label="Vista 3D de dos depósitos, bomba, tubería y agua que fluye según la velocidad calculada"'
+)
+self.escena.move_camera(2.5, -11, 5.6, look_at_x=0, look_at_y=0, look_at_z=1.28, duration=0)
+```
+
+`fov=42` es el campo de visión de la cámara en perspectiva; `fps=30` fija el objetivo de actualización. El fondo y la posición de cámara determinan cómo se ve la instalación al abrir la vista; la clase CSS permite ajustarla al espacio disponible.
 
 La tubería se arma con cilindros rectos y codos de Bézier. Cada tramo muestra una envolvente exterior y un interior cian; se agregan dos `CanalAgua` para representar el movimiento dentro de aspiración y descarga. Los depósitos se construyen con base, postes, bordes y paneles transparentes. La escena usa un `SueloLuminoso` y materiales o shaders del navegador para los efectos visuales. Todo eso está definido en Python y en los archivos JavaScript de `pumpcalc/assets/`; no procede del GLB de la bomba.
 
+El siguiente fragmento de `_construir` muestra qué partes se crean en la aplicación y cuál viene del modelo exportado:
+
+```python
+tanque(-4.05, .16, g.nivel_origen, destino=False)
+tanque(g.x_destino, g.base_destino, g.nivel_destino, destino=True)
+
+# Línea de aspiración, bomba y descarga. El diámetro mostrado se comprime visualmente.
+tubo(-4.16, -1.93, .58)
+tubo(.23, 1.92, .58)
+```
+
+Esas llamadas forman parte de `_construir`; unas líneas más abajo, en el mismo método, se inserta **el GLB de la bomba**:
+
+```python
+# Geometría y materiales PBR procedentes del archivo Blender aportado.
+escena.gltf(BOMBA_URL)
+```
+
+La distinción importante para exponer es que `tanque(...)` y `tubo(...)` responden a las entradas del usuario, mientras que `escena.gltf(BOMBA_URL)` incorpora la bomba preparada en Blender.
+
 **Cadena de datos que se puede explicar en voz alta:** entradas del escenario → cálculo del punto de operación → velocidad del agua `v` → `rapidez_3d(v) = 2,8v/(v + 1,8)` → movimiento visual. Esa rapidez se mide en **unidades visuales por segundo**, no en m/s: conserva la comparación entre escenarios, pero comprime la velocidad. Python envía al navegador el estado de flujo, pausa y revisión; los fotogramas del agua se animan allí mediante JavaScript, `performance.now()` y Three.js. `AguaEnTuberia` mueve 65 partículas por el recorrido; `CanalAgua` anima el patrón luminoso; `SuperficieAgua` baja el nivel de succión y `TanqueLlenado` sube el de descarga y dibuja el chorro.
 
+En código, la rapidez visual y la decisión de activar el flujo son:
+
+```python
+def rapidez_3d(velocidad_ms: float) -> float:
+    """Escala monótona común a A/B, en unidades visuales por segundo."""
+    if not math.isfinite(velocidad_ms) or velocidad_ms < 0:
+        raise ValueError('La velocidad debe ser finita y no negativa.')
+    return 2.8 * velocidad_ms / (velocidad_ms + 1.8)
+```
+
+```python
+def _sincronizar_flujo(self) -> None:
+    punto = self.sesion.punto_vigente
+    activa = punto is not None and punto.caudal_m3s > 0
+    rapidez = rapidez_3d(punto.sistema.velocidad_ms) if activa else 0.0
+    if self.agua_destino is not None:
+        self.agua_destino.establecer_flujo(rapidez, activa, self.pausada, self.sesion.revision)
+    if self.particulas is not None:
+        self.particulas.establecer_flujo(rapidez, activa, self.pausada)
+    for superficie in self.superficies:
+        superficie.establecer_flujo(activa, self.pausada)
+    for canal in self.canales:
+        canal.establecer_flujo(rapidez, activa, self.pausada)
+```
+
+`punto_vigente` es el resultado hidráulico actual. La condición `caudal_m3s > 0` impide animar un caudal nulo o un estado sin solución. `establecer_flujo` comunica rapidez, actividad y pausa a los componentes del navegador; `revision` permite que el depósito de descarga reinicie su secuencia cuando cambia el resultado.
+
 El código hace coincidir **el volumen visual** que baja en succión con el que sube en descarga, usando las secciones dibujadas de ambos depósitos. La toma queda sumergida al final de la secuencia. El progreso del llenado ilustrativo aumenta con `dt × rapidez × 0,045` y se detiene al llegar a 1; este factor es de presentación, **no calcula un tiempo físico de llenado**. La solución hidráulica usa niveles de referencia fijos. «Pausar» detiene el avance visual; «Reproducir de nuevo» reinicia la secuencia. Si el caudal válido es cero, no hay movimiento; si no existe un punto vigente, se desactiva el flujo. El navegador debe poder mostrar WebGL para esta vista.
+
+Este es el avance del depósito de descarga en [`tanque_llenado.js`](pumpcalc/assets/tanque_llenado.js):
+
+```javascript
+animate() {
+  const now = performance.now();
+  const dt = Math.min((now - this.lastTime) / 1000, .08);
+  this.lastTime = now;
+  const moving = this.active && !this.paused && this.progress < 1
+    && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (moving) {
+    // Escala de demostración: Q determina la rapidez relativa, no el tiempo real.
+    this.progress = Math.min(1, this.progress + dt * this.speed * .045);
+    this.time += dt;
+    estados.set(this.sceneKey, { finished: this.progress === 1, progress: this.progress });
+    this.updateVisual();
+  }
+}
+```
+
+`dt` son los segundos transcurridos desde la actualización anterior, limitados a 0,08 para evitar saltos grandes. `progress` va de 0 a 1; al cambiar, `updateVisual()` mueve la superficie y el volumen de agua. `moving` exige resultado activo, ausencia de pausa y que no se haya completado la secuencia. La preferencia de movimiento reducido del navegador también detiene esta animación.
 
 ### 3. Cómo interpretar el análisis de tiempo y recursos
 
 El archivo reciente [`tools/perfil_rendimiento.py`](tools/perfil_rendimiento.py) mide el **funcionamiento de la escena 3D del caso base**, no la duración de un cálculo hidráulico ni el tiempo de llenado. Inicia PumpCalc y Chromium, abre la página a 1440 × 900, espera a que la escena esté visible, deja pasar 2 segundos de estabilización y toma una muestra de 10 segundos por defecto. Reinicia el flujo cada 8 segundos para mantener la animación activa. En Linux lee `/proc` para sumar el servidor y el árbol de procesos de Chromium; el controlador Node de Playwright queda fuera de esa suma. El navegador informa el renderizador WebGL empleado.
+
+**Cómo sale cada cifra del código:** el navegador guarda una marca de tiempo cuando el lienzo WebGL ejecuta `gl.clear`:
+
+```javascript
+window.pumpcalcRenderTimes = [];
+const original = gl.clear.bind(gl);
+gl.clear = (...args) => {
+    window.pumpcalcRenderTimes.push(performance.now());
+    return original(...args);
+};
+```
+
+El perfilador toma los ticks de CPU y la memoria `Pss:` de `/proc` para los procesos incluidos:
+
+```python
+pids = descendientes(tabla, {servidor_pid, chromium_pid})
+ticks = sum(tabla[pid][1] for pid in pids)
+pss_kib = 0
+```
+
+Finalmente calcula y muestra los indicadores así:
+
+```python
+fps = (len(tiempos) - 1) / ((tiempos[-1] - tiempos[0]) / 1000)
+cpu = (ticks_finales - ticks_iniciales) / TICKS_POR_SEGUNDO / duracion * 100
+print(f'FPS: {fps:.1f}')
+print(f'CPU promedio (servidor + Chromium): {cpu:.1f} % de un núcleo')
+print(f'Memoria máxima PSS (servidor + Chromium): {pico_pss / 1024:.1f} MiB')
+```
+
+`len(tiempos) - 1` cuenta intervalos entre marcas; la resta de marcas está en milisegundos y se divide por 1000 para obtener segundos. Los ticks se convierten a segundos de CPU y luego a porcentaje de **un núcleo**. `pico_pss` está en KiB y se divide por 1024 para mostrar MiB. Son fragmentos del perfilador; entre la inicialización y la impresión, el bucle toma muestras de memoria cada 0,25 segundos y conserva la mayor.
 
 En este equipo, el **12 de noviembre de 2026**, dos ejecuciones reales de 10 segundos en modo con ventana dieron:
 
@@ -81,8 +242,8 @@ PumpCalc es un simulador web local escrito en Python. Estima cuánto caudal entr
 | Carpeta | Contenido |
 | --- | --- |
 | `pumpcalc/` | Cálculo e interfaz web; `pumpcalc/assets/` contiene las animaciones 3D. |
-| `assets/modelos/` | Modelo GLB que usa la vista 3D; `referencia/` conserva la base anterior. |
-| `tools/blender/` | Scripts para generar o exportar los modelos, fuera de la aplicación en ejecución. |
+| `assets/modelos/` | Modelo GLB de la bomba que usa la vista 3D. |
+| `tools/blender/` | Script para extraer la bomba del archivo Blender, fuera de la aplicación en ejecución. |
 | `tests/` | Pruebas de la app web y del cálculo; `legacy/` reúne las de escritorio. |
 | `docs/` | Guías y documentación; `antecedentes/` guarda los documentos iniciales. |
 
