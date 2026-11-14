@@ -167,15 +167,17 @@ PumpCalc es un simulador web local escrito en Python. Estima cuánto caudal entr
 
 ## Instalación en Windows
 
-Necesitas Python 3.13.7, la versión verificada para este proyecto, y un navegador. Abre PowerShell en la carpeta de PumpCalc y ejecuta estos comandos. El primero crea el entorno virtual. El segundo instala NiceGUI y pytest con las versiones indicadas en [requirements.txt](requirements.txt).
+Necesitas Python 3.13 y un navegador. El proyecto se verificó con Python 3.13.7 y 3.13.15. Abre PowerShell en la carpeta de PumpCalc y ejecuta estos comandos. Usa `py -3.13` para crear el entorno: el comando `python` puede apuntar a otra instalación de Python. Después, ejecuta siempre el intérprete de `.venv`.
 
 ```powershell
-python -m venv .venv
+py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe app.py
 ```
 
 Con el servidor en ejecución, abre <http://127.0.0.1:8080> en el navegador. Para detenerlo, pulsa `Ctrl+C` en la terminal. En las siguientes sesiones puedes arrancar con el tercer comando.
+
+Si `python app.py` falla antes de iniciar NiceGUI, comprueba qué versión devuelve `python --version` y ejecuta `.\.venv\Scripts\python.exe app.py` desde esta carpeta. El arranque local no requiere compilar el proyecto ni tener Docker instalado.
 
 ## Ejecutar con Docker
 
