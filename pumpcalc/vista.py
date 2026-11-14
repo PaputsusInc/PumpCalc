@@ -22,6 +22,8 @@ def construir_vista() -> None:
     escenas: dict[str, VistaAnimacion] = {}
 
     def error_campo(clave: str) -> str | None:
+        if sesion.error_tanques is not None and sesion.error_tanques.campo == clave:
+            return str(sesion.error_tanques)
         if clave in sesion.errores_datos_bomba:
             return sesion.errores_datos_bomba[clave]
         return str(sesion.error) if sesion.error is not None and sesion.error.campo == clave else None
@@ -84,6 +86,13 @@ def construir_vista() -> None:
             if proyecto.comparando:
                 comparacion.refresh()
 
+    def editar_tanque(clave: str, valor: str) -> None:
+        if not restaurando:
+            sesion.editar_tanque(clave, valor)
+            for campo in sesion.entradas_tanques:
+                campos[campo].validate()
+            escenas[proyecto.activo].actualizar()
+
     def simular() -> None:
         cancelar_temporizador()
         sesion.simular()
@@ -98,6 +107,8 @@ def construir_vista() -> None:
             for clave, valor in sesion.entradas.items():
                 campos[clave].set_value(valor)
             for clave, valor in sesion.datos_bomba.items():
+                campos[clave].set_value(valor)
+            for clave, valor in sesion.entradas_tanques.items():
                 campos[clave].set_value(valor)
             await tabla.refresh()
         finally:
@@ -271,6 +282,29 @@ def construir_vista() -> None:
                         'text-sm text-slate-600'
                     )
                     tabla()
+                with ui.card().classes('pc-panel pc-tanks w-full'):
+                    encabezado_seccion('Agua inicial · vista 3D',
+                                       'Del volumen al nivel, y del nivel al caudal.', 'water')
+                    ui.label('El desnivel de la instalación corresponde a las superficies iniciales. '
+                             'Área × altura = volumen. El llenado usa Runge–Kutta 4; '
+                             'estos datos no cambian el resultado estacionario ni la vista 2D.').classes(
+                                 'text-xs text-slate-600')
+                    for nombre, titulo, icono in (
+                        ('origen', 'Depósito de origen', 'south'),
+                        ('destino', 'Depósito de destino', 'north'),
+                    ):
+                        with ui.element('div').classes('pc-tank-card'):
+                            with ui.row().classes('items-center gap-2'):
+                                ui.icon(icono, size='18px').classes('pc-tank-icon')
+                                ui.label(titulo).classes('pc-tank-title')
+                            for magnitud, etiqueta in (
+                                ('inicial_m3', 'Agua inicial (m³)'),
+                                ('capacidad_m3', 'Capacidad (m³)'),
+                                ('area_m2', 'Área horizontal (m²)'),
+                            ):
+                                clave = f'{nombre}_{magnitud}'
+                                entrada(clave, etiqueta, sesion.entradas_tanques[clave],
+                                        lambda e, clave=clave: editar_tanque(clave, e.value))
                 with ui.card().classes('pc-panel pc-target w-full'):
                     encabezado_seccion('Una meta, dos escenarios', '¿Hasta dónde llega cada configuración?', 'flag')
                     objetivo = ui.input('Caudal objetivo común (m³/h, opcional)', value=proyecto.objetivo_texto,

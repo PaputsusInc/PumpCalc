@@ -10,6 +10,7 @@ from nicegui.elements.scene.scene_object3d import Object3D
 
 from pumpcalc.entradas import Instalacion
 from pumpcalc.simulacion import SesionSimulacion
+from pumpcalc.transitorio import ConfiguracionTanques, TrayectoriaLlenado, simular_llenado
 
 
 ASSETS = Path(__file__).parent / 'assets'
@@ -19,7 +20,8 @@ ANCHO_AGUA_ORIGEN = 2.05 - .15
 ANCHO_AGUA_DESTINO = 2.2 - .15
 FONDO_AGUA = 1.5 - .17
 ALTURA_TOMA = .58
-
+ALTURA_VISUAL_AGUA = .56
+SEGUNDOS_SIMULADOS_POR_SEGUNDO = 60
 
 class AguaEnTuberia(Object3D, component=ASSETS / 'agua_tuberia.js'):
     """Partículas animadas en el navegador para evitar fotogramas por WebSocket."""
@@ -99,23 +101,33 @@ class PanelVidrio(Object3D, component=ASSETS / 'panel_vidrio.js'):
 
 
 class TanqueLlenado(Object3D, component=ASSETS / 'tanque_llenado.js'):
-    """Agua de descarga: llenado visual local, sin alterar el cálculo estacionario."""
+    """Reproduce una trayectoria física precalculada y comparte su estado visual."""
 
     def __init__(self, ancho: float, fondo: float, base: float, inicial: float,
                  nivel: float, salida: float, escena_id: str) -> None:
         super().__init__(ancho, fondo, base, inicial, nivel, salida, escena_id)
-        self.rapidez = 0.0
+        self.trayectoria: list[list[float]] = []
         self.activa = False
         self.pausada = False
-        self.revision = -1
+        self.revision = None
 
-    def establecer_flujo(self, rapidez: float, activa: bool, pausada: bool, revision: int) -> None:
-        self.rapidez, self.activa, self.pausada, self.revision = rapidez, activa, pausada, revision
-        self.run_method('set_flow', rapidez, activa, pausada, revision)
+    def establecer_trayectoria(self, trayectoria: list[list[float]], revision: tuple[int, int],
+                               activa: bool, pausada: bool, motivo: str) -> None:
+        self.trayectoria, self.revision = trayectoria, revision
+        self.activa, self.pausada = activa, pausada
+        self.motivo = motivo
+        self.run_method('set_trajectory', trayectoria, list(revision), activa, pausada,
+                        SEGUNDOS_SIMULADOS_POR_SEGUNDO, motivo)
+
+    def establecer_reproduccion(self, activa: bool, pausada: bool) -> None:
+        self.activa, self.pausada = activa, pausada
+        self.run_method('set_playback', activa, pausada)
 
     def _resend(self) -> None:
         super()._resend()
-        self.run_method('set_flow', self.rapidez, self.activa, self.pausada, self.revision)
+        if self.revision is not None:
+            self.run_method('set_trajectory', self.trayectoria, list(self.revision),
+                            self.activa, self.pausada, SEGUNDOS_SIMULADOS_POR_SEGUNDO, self.motivo)
 
     def reproducir(self) -> None:
         self.run_method('restart')
@@ -129,29 +141,42 @@ class Geometria3D:
     nivel_destino: float
     x_destino: float
     radio: float
+    fraccion_origen: float = .75
+    fraccion_destino: float = .125
+
+    @property
+    def base_origen(self) -> float:
+        return ALTURA_TOMA - .08
+
+    @property
+    def maximo_origen(self) -> float:
+        return ALTURA_TOMA + ALTURA_VISUAL_AGUA
+
+    @property
+    def maximo_destino(self) -> float:
+        return self.base_destino + .08 + ALTURA_VISUAL_AGUA
 
     @property
     def nivel_final_origen(self) -> float:
         # Mantiene bajo el agua toda la sección visible de la entrada de succión.
-        return ALTURA_TOMA + self.radio * 1.48 + .025
+        return ALTURA_TOMA
 
     @property
     def descenso_origen(self) -> float:
-        return max(0, self.nivel_origen - self.nivel_final_origen)
+        return ALTURA_VISUAL_AGUA * self.fraccion_origen
 
     @property
     def nivel_inicial_destino(self) -> float:
-        volumen = self.descenso_origen * ANCHO_AGUA_ORIGEN * FONDO_AGUA
-        return self.nivel_destino - volumen / (ANCHO_AGUA_DESTINO * FONDO_AGUA)
+        return self.nivel_destino
 
     @property
     def entrada_destino(self) -> float:
         # El tubo descarga por encima de la superficie y deja visible el chorro.
-        return self.nivel_destino + .28
+        return self.maximo_destino + .16
 
     @property
     def base_destino(self) -> float:
-        return self.nivel_destino - 0.84
+        return self.nivel_destino - .08 - ALTURA_VISUAL_AGUA * self.fraccion_destino
 
     @property
     def recorrido(self) -> list[list[float]]:
@@ -170,12 +195,17 @@ class Geometria3D:
         return puntos
 
 
-def geometria_3d(instalacion: Instalacion) -> Geometria3D:
+def geometria_3d(instalacion: Instalacion,
+                 tanques: ConfiguracionTanques | None = None) -> Geometria3D:
     """Comprime L, Δz y D visualmente, manteniendo el orden y las cotas relativas."""
     desnivel = 2.45 * math.log1p(instalacion.desnivel_m) / math.log1p(100)
     distancia = 0.42 * math.log1p(instalacion.longitud_m / 10) / math.log1p(100)
     radio = 0.082 + 0.052 * math.log(instalacion.diametro_m / 0.01, 20)
-    return Geometria3D(1.0, 1.0 + desnivel, 3.9 + distancia, radio)
+    fraccion_origen = .75 if tanques is None else tanques.origen.inicial_m3 / tanques.origen.capacidad_m3
+    fraccion_destino = .125 if tanques is None else tanques.destino.inicial_m3 / tanques.destino.capacidad_m3
+    nivel_origen = ALTURA_TOMA + ALTURA_VISUAL_AGUA * fraccion_origen
+    return Geometria3D(nivel_origen, nivel_origen + desnivel, 3.9 + distancia, radio,
+                       fraccion_origen, fraccion_destino)
 
 
 def rapidez_3d(velocidad_ms: float) -> float:
@@ -197,17 +227,19 @@ class VistaEscena3D:
         self.canales: list[CanalAgua] = []
         self.pausada = False
         self.escena_id = uuid4().hex
+        self.revision_trayectoria: tuple[int, int] | None = None
+        self.trayectoria: TrayectoriaLlenado | None = None
         self.escena = ui.scene(
             width=840, height=470, grid=False, background_color='#080f2b',
             camera=ui.scene.perspective_camera(fov=42), fps=30,
         ).classes('pc-three-canvas').style('width:100%; height:100%;').props(
             'role=img aria-label="Vista 3D de dos depósitos, bomba, tubería y agua que fluye según la velocidad calculada"'
         )
-        self.escena.move_camera(2.5, -11, 5.6, look_at_x=0, look_at_y=0, look_at_z=1.28, duration=0)
+        self.escena.move_camera(0, -13, 5.8, look_at_x=0, look_at_y=0, look_at_z=1.28, duration=0)
         self.actualizar()
 
     def reiniciar_camara(self) -> None:
-        self.escena.move_camera(2.5, -11, 5.6, look_at_x=0, look_at_y=0, look_at_z=1.28, duration=0.45)
+        self.escena.move_camera(0, -13, 5.8, look_at_x=0, look_at_y=0, look_at_z=1.28, duration=0.45)
 
     def reproducir(self) -> None:
         """Vuelve al comienzo de la secuencia visual del escenario vigente."""
@@ -228,7 +260,7 @@ class VistaEscena3D:
             # pero retiramos cualquier indicación de flujo calculado.
             self._sincronizar_flujo()
             return
-        nueva = geometria_3d(instalacion)
+        nueva = geometria_3d(instalacion, self.sesion.tanques)
         if nueva != self.geometria:
             self.geometria = nueva
             self._construir(nueva)
@@ -236,16 +268,55 @@ class VistaEscena3D:
 
     def _sincronizar_flujo(self) -> None:
         punto = self.sesion.punto_vigente
-        activa = punto is not None and punto.caudal_m3s > 0
+        valida = punto is not None and punto.caudal_m3s > 0 and self.sesion.tanques is not None
+        revision = (self.sesion.revision, self.sesion.revision_tanques)
+        calcular = valida and revision != self.revision_trayectoria
+        if calcular:
+            self.trayectoria = simular_llenado(self.sesion.escenario, self.sesion.tanques)
+            self.revision_trayectoria = revision
+        activa = bool(valida and self.trayectoria and len(self.trayectoria.estados) > 1)
         rapidez = rapidez_3d(punto.sistema.velocidad_ms) if activa else 0.0
         if self.agua_destino is not None:
-            self.agua_destino.establecer_flujo(rapidez, activa, self.pausada, self.sesion.revision)
+            if valida and (calcular or self.agua_destino.revision is None):
+                self.agua_destino.establecer_trayectoria(
+                    self._fotogramas(self.trayectoria), revision, activa, self.pausada,
+                    self.trayectoria.motivo_parada)
+            elif self.agua_destino.revision is None:
+                g = self.geometria
+                tanques = self.sesion.tanques
+                origen = tanques.origen.inicial_m3 if tanques else 0
+                destino = tanques.destino.inicial_m3 if tanques else 0
+                self.agua_destino.establecer_trayectoria(
+                    [[0, g.nivel_origen, g.nivel_destino, 0, 0, origen, destino,
+                      origen / tanques.origen.area_m2 if tanques else 0,
+                      destino / tanques.destino.area_m2 if tanques else 0,
+                      self.sesion.escenario.instalacion.desnivel_m
+                      if self.sesion.escenario else 0]],
+                    revision, False, self.pausada, 'Sin trayectoria vigente')
+            else:
+                self.agua_destino.establecer_reproduccion(activa, self.pausada)
         if self.particulas is not None:
             self.particulas.establecer_flujo(rapidez, activa, self.pausada)
         for superficie in self.superficies:
             superficie.establecer_flujo(activa, self.pausada)
         for canal in self.canales:
             canal.establecer_flujo(rapidez, activa, self.pausada)
+
+    def _fotogramas(self, trayectoria: TrayectoriaLlenado) -> list[list[float]]:
+        g = self.geometria
+        tanques = self.sesion.tanques
+        inicial_origen = tanques.origen.inicial_m3
+        return [[estado.tiempo_s,
+                 ALTURA_TOMA + ALTURA_VISUAL_AGUA * estado.origen_m3 / tanques.origen.capacidad_m3,
+                 g.base_destino + .08 + ALTURA_VISUAL_AGUA * estado.destino_m3 / tanques.destino.capacidad_m3,
+                 rapidez_3d(estado.velocidad_ms), estado.caudal_m3s * 3600,
+                 estado.origen_m3, estado.destino_m3,
+                 estado.origen_m3 / tanques.origen.area_m2,
+                 estado.destino_m3 / tanques.destino.area_m2,
+                 self.sesion.escenario.instalacion.desnivel_m
+                 + (inicial_origen - estado.origen_m3)
+                 * (1 / tanques.origen.area_m2 + 1 / tanques.destino.area_m2)]
+                for estado in trayectoria.estados]
 
     def _construir(self, g: Geometria3D) -> None:
         escena = self.escena
@@ -289,7 +360,7 @@ class VistaEscena3D:
 
         def tanque(x: float, base: float, nivel: float, *, destino: bool) -> None:
             ancho, fondo = (2.2, 1.5) if destino else (2.05, 1.5)
-            altura = nivel - base + .42
+            altura = ALTURA_VISUAL_AGUA + .34
             # Estructura abierta por ambos lados para que el agua siga visible al girar.
             caja(ancho, fondo, .12, x, 0, base, '#414e74')
             for lado in (-1, 1):
@@ -308,11 +379,10 @@ class VistaEscena3D:
                 PanelVidrio(.022, fondo - .12, altura - .12).move(
                     x + lado * (ancho / 2 - .045), 0, base + altura / 2)
             if destino:
-                # Las dos secciones visibles intercambian el mismo volumen ilustrativo.
-                # La toma de succión queda cubierta al finalizar.
+                # El nivel se obtiene del volumen calculado para el destino.
                 self.agua_destino = TanqueLlenado(
-                    ANCHO_AGUA_DESTINO, FONDO_AGUA, base + .08, g.nivel_inicial_destino,
-                    nivel, g.entrada_destino,
+                    ANCHO_AGUA_DESTINO, FONDO_AGUA, base + .08, g.nivel_destino,
+                    g.maximo_destino, g.entrada_destino,
                     self.escena_id,
                 )
                 self.agua_destino.move(x, 0, 0)
@@ -338,10 +408,12 @@ class VistaEscena3D:
             # Suelo oscuro y bases, siguiendo la iluminación de la referencia.
             SueloLuminoso().move(.08, 0, -.045)
             caja(3.0, 2.15, .08, -1.0, 0, .08, '#25254d')
+            caja(2.45, 1.9, g.base_origen - .12, -4.05, 0,
+                 (g.base_origen + .12) / 2, '#1f2748')
             if g.base_destino > .16:
                 caja(2.6, 1.9, g.base_destino - .12, g.x_destino, 0,
                      (g.base_destino + .12) / 2, '#1f2748')
-            tanque(-4.05, .16, g.nivel_origen, destino=False)
+            tanque(-4.05, g.base_origen, g.nivel_origen, destino=False)
             tanque(g.x_destino, g.base_destino, g.nivel_destino, destino=True)
 
             # Línea de aspiración, bomba y descarga. El diámetro mostrado se comprime visualmente.

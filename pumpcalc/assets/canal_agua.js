@@ -54,7 +54,8 @@ export default class CanalAgua {
         return;
       }
       if (this.active && !this.paused && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        this.time += seconds * this.speed;
+        const speed = window.__pumpcalcWaterStates?.get(this.sceneKey)?.speed ?? this.speed;
+        this.time += seconds * speed;
         this.uniforms.time.value = this.time;
       }
     };

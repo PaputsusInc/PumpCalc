@@ -26,8 +26,7 @@ export default class SuperficieAgua {
     group.add(liquid);
     this.liquid = liquid;
     this.updateLevel = () => {
-      const progress = window.__pumpcalcWaterStates?.get(this.sceneKey)?.progress ?? 0;
-      const level = this.top - this.drop * progress;
+      const level = window.__pumpcalcWaterStates?.get(this.sceneKey)?.sourceLevel ?? this.top;
       const height = Math.max(.01, level - this.bottom);
       this.liquid.scale.z = height;
       this.liquid.position.z = this.bottom + height / 2;

@@ -6,7 +6,7 @@ Software del proyecto final de Métodos Numéricos.
 
 ### 2. Cómo se configura y actualiza la escena web
 
-En [`escena3d.py`](pumpcalc/escena3d.py), NiceGUI crea una `ui.scene` con dimensiones iniciales de 840 × 470, sin cuadrícula, con fondo `#080f2b`, cámara en perspectiva de 42° y objetivo de **30 FPS**. La cámara inicia en `(2.5, -11, 5.6)` mirando hacia `(0, 0, 1.28)`; «Restablecer cámara» vuelve a esa posición. El archivo `bomba_usuario.glb` se sirve en `/modelos/bomba_usuario.glb` y se inserta con `escena.gltf(...)`. También se colocan tres luces de acento, las etiquetas, el suelo, la base, ambos depósitos y la tubería.
+En [`escena3d.py`](pumpcalc/escena3d.py), NiceGUI crea una `ui.scene` con dimensiones iniciales de 840 × 470, sin cuadrícula, con fondo `#080f2b`, cámara en perspectiva de 42° y objetivo de **30 FPS**. La cámara inicia en `(0, -13, 5.8)` mirando hacia `(0, 0, 1.28)`; «Restablecer cámara» vuelve a esa posición. El archivo `bomba_usuario.glb` se sirve en `/modelos/bomba_usuario.glb` y se inserta con `escena.gltf(...)`. También se colocan tres luces de acento, las etiquetas, el suelo, la base, ambos depósitos y la tubería.
 
 Esta línea registra el archivo de bomba para que el navegador pueda solicitarlo por URL:
 
@@ -17,20 +17,24 @@ BOMBA_URL = app.add_static_file(local_file=BOMBA_MODELO, url_path='/modelos/bomb
 
 `BOMBA_MODELO` es la ruta local al GLB exportado y `BOMBA_URL` es la dirección que usará `escena.gltf(BOMBA_URL)` más abajo.
 
-La instalación visible se **reconstruye cuando cambia su geometría**. `geometria_3d(instalacion)` traduce las entradas a coordenadas de exhibición: el desnivel eleva el nivel de destino, la longitud desplaza el depósito de destino y el diámetro aumenta el radio dibujado. Las expresiones con logaritmos comprimen esos cambios para que quepan en pantalla; **no son una escala métrica**. La bomba GLB permanece como modelo fijo. La rugosidad y el coeficiente `K` intervienen en el cálculo hidráulico, pero esta función no los convierte en formas 3D.
+La instalación visible se **reconstruye cuando cambia su geometría**. `geometria_3d(instalacion, tanques)` traduce las entradas a coordenadas de exhibición: el desnivel inicial eleva el nivel de destino, la longitud desplaza ese depósito y el diámetro aumenta el radio dibujado. El volumen inicial como fracción de la capacidad fija el nivel de agua de cada tanque. Las expresiones con logaritmos comprimen los cambios de la instalación para que quepan en pantalla; **no son una escala métrica**. La bomba GLB permanece como modelo fijo. La rugosidad y `K` intervienen en el cálculo hidráulico, pero no cambian la geometría 3D.
 
-Estas son las tres transformaciones exactas del código, con `L` y `Δz` en metros y `D` convertido a metros:
+Estas son las transformaciones principales, con `L` y `Δz` en metros y `D` en metros:
 
 ```python
-def geometria_3d(instalacion: Instalacion) -> Geometria3D:
-    """Comprime L, Δz y D visualmente, manteniendo el orden y las cotas relativas."""
+def geometria_3d(instalacion: Instalacion,
+                 tanques: ConfiguracionTanques | None = None) -> Geometria3D:
     desnivel = 2.45 * math.log1p(instalacion.desnivel_m) / math.log1p(100)
     distancia = 0.42 * math.log1p(instalacion.longitud_m / 10) / math.log1p(100)
     radio = 0.082 + 0.052 * math.log(instalacion.diametro_m / 0.01, 20)
-    return Geometria3D(1.0, 1.0 + desnivel, 3.9 + distancia, radio)
+    fraccion_origen = .75 if tanques is None else tanques.origen.inicial_m3 / tanques.origen.capacidad_m3
+    fraccion_destino = .125 if tanques is None else tanques.destino.inicial_m3 / tanques.destino.capacidad_m3
+    nivel_origen = ALTURA_TOMA + ALTURA_VISUAL_AGUA * fraccion_origen
+    return Geometria3D(nivel_origen, nivel_origen + desnivel, 3.9 + distancia, radio,
+                       fraccion_origen, fraccion_destino)
 ```
 
-`math.log1p(x)` calcula `ln(1 + x)`. La función devuelve nivel de succión fijo `1.0`, nivel de descarga elevado por `desnivel`, posición horizontal desplazada por `distancia` y radio visible. Por ejemplo, duplicar `L` desplaza el depósito en pantalla, pero no duplica la distancia dibujada. El valor real de `L` sí entra en las ecuaciones hidráulicas; esta transformación solo decide la forma de mostrarlo.
+`math.log1p(x)` calcula `ln(1 + x)`. Los niveles iniciales dependen del agua ingresada y mantienen la diferencia visual de altura. Por ejemplo, duplicar `L` desplaza el depósito en pantalla, pero no duplica la distancia dibujada. El valor real de `L` sí entra en las ecuaciones hidráulicas; esta función solo decide la forma de mostrarlo.
 
 Esta es la configuración inicial exacta de la escena en la clase `VistaEscena3D`:
 
@@ -41,7 +45,7 @@ self.escena = ui.scene(
 ).classes('pc-three-canvas').style('width:100%; height:100%;').props(
     'role=img aria-label="Vista 3D de dos depósitos, bomba, tubería y agua que fluye según la velocidad calculada"'
 )
-self.escena.move_camera(2.5, -11, 5.6, look_at_x=0, look_at_y=0, look_at_z=1.28, duration=0)
+self.escena.move_camera(0, -13, 5.8, look_at_x=0, look_at_y=0, look_at_z=1.28, duration=0)
 ```
 
 `fov=42` es el campo de visión de la cámara en perspectiva; `fps=30` fija el objetivo de actualización. El fondo y la posición de cámara determinan cómo se ve la instalación al abrir la vista; la clase CSS permite ajustarla al espacio disponible.
@@ -51,7 +55,7 @@ La tubería se arma con cilindros rectos y codos de Bézier. Cada tramo muestra 
 El siguiente fragmento de `_construir` muestra qué partes se crean en la aplicación y cuál viene del modelo exportado:
 
 ```python
-tanque(-4.05, .16, g.nivel_origen, destino=False)
+tanque(-4.05, g.base_origen, g.nivel_origen, destino=False)
 tanque(g.x_destino, g.base_destino, g.nivel_destino, destino=True)
 
 # Línea de aspiración, bomba y descarga. El diámetro mostrado se comprime visualmente.
@@ -68,7 +72,15 @@ escena.gltf(BOMBA_URL)
 
 La distinción importante para exponer es que `tanque(...)` y `tubo(...)` responden a las entradas del usuario, mientras que `escena.gltf(BOMBA_URL)` incorpora la bomba preparada en Blender.
 
-**Cadena de datos que se puede explicar en voz alta:** entradas del escenario → cálculo del punto de operación → velocidad del agua `v` → `rapidez_3d(v) = 2,8v/(v + 1,8)` → movimiento visual. Esa rapidez se mide en **unidades visuales por segundo**, no en m/s: conserva la comparación entre escenarios, pero comprime la velocidad. Python envía al navegador el estado de flujo, pausa y revisión; los fotogramas del agua se animan allí mediante JavaScript, `performance.now()` y Three.js. `AguaEnTuberia` mueve 65 partículas por el recorrido; `CanalAgua` anima el patrón luminoso; `SuperficieAgua` baja el nivel de succión y `TanqueLlenado` sube el de descarga y dibuja el chorro.
+**Cadena de datos de esta versión:** curva e instalación → punto estacionario inicial → volúmenes, capacidades y áreas de los tanques → integración temporal por Runge–Kutta 4 → trayectoria de niveles, caudal y velocidad → reproducción 3D. Python calcula la trayectoria; JavaScript interpola sus muestras entre fotogramas. `AguaEnTuberia` mueve las partículas con la velocidad calculada en cada instante, transformada a unidades visuales por segundo; `SuperficieAgua` y `TanqueLlenado` muestran los niveles derivados de los volúmenes. La vista 2D conserva su animación anterior de niveles fijos.
+
+### Llenado calculado con Runge–Kutta 4
+
+El formulario **Agua inicial · vista 3D** pide, para cada depósito, volumen inicial, capacidad y área horizontal. El desnivel `Δz` del formulario es la diferencia entre las superficies **al comienzo**. Si `V` es el volumen transferido, el desnivel posterior es `Δz + V/A_destino + V/A_origen`. Por conservación de volumen, el origen pierde exactamente lo que gana el destino. La ecuación diferencial es `dV/dt = Q(V)`, donde cada evaluación de `Q(V)` vuelve a resolver el cruce bomba–sistema al desnivel de ese instante.
+
+[`transitorio.py`](pumpcalc/transitorio.py) implementa explícitamente las cuatro etapas `k1`, `k2`, `k3` y `k4` de RK4, con pasos de 10 segundos simulados. La integración se detiene cuando se agota el agua de origen, se llena el destino, deja de existir un cruce en el dominio de la bomba o se alcanza el horizonte de dos horas simuladas. El caso base comienza con 1,2 m³ y 0,2 m³; ambos tanques tienen capacidad 1,6 m³ y área 1 m². La trayectoria termina cerca de 19,69 minutos simulados al agotarse el origen. El visor acelera la reproducción: **un segundo visual equivale a 60 segundos simulados**. El tiempo que muestra es el de la trayectoria calculada, no el tiempo que lleva abierta la página.
+
+La simulación sigue siendo un modelo educativo: supone depósitos de sección horizontal constante, tubería llena, bomba a velocidad fija y flujo cuasiestacionario en cada paso. No modela cebado, cavitación, succión al descubrirse la toma ni transitorios de presión. La geometría dibujada conserva una escala comprimida. La precisión temporal depende del paso de integración y de la curva de bomba disponible.
 
 En código, la rapidez visual y la decisión de activar el flujo son:
 
@@ -80,45 +92,7 @@ def rapidez_3d(velocidad_ms: float) -> float:
     return 2.8 * velocidad_ms / (velocidad_ms + 1.8)
 ```
 
-```python
-def _sincronizar_flujo(self) -> None:
-    punto = self.sesion.punto_vigente
-    activa = punto is not None and punto.caudal_m3s > 0
-    rapidez = rapidez_3d(punto.sistema.velocidad_ms) if activa else 0.0
-    if self.agua_destino is not None:
-        self.agua_destino.establecer_flujo(rapidez, activa, self.pausada, self.sesion.revision)
-    if self.particulas is not None:
-        self.particulas.establecer_flujo(rapidez, activa, self.pausada)
-    for superficie in self.superficies:
-        superficie.establecer_flujo(activa, self.pausada)
-    for canal in self.canales:
-        canal.establecer_flujo(rapidez, activa, self.pausada)
-```
-
-`punto_vigente` es el resultado hidráulico actual. La condición `caudal_m3s > 0` impide animar un caudal nulo o un estado sin solución. `establecer_flujo` comunica rapidez, actividad y pausa a los componentes del navegador; `revision` permite que el depósito de descarga reinicie su secuencia cuando cambia el resultado.
-
-El código hace coincidir **el volumen visual** que baja en succión con el que sube en descarga, usando las secciones dibujadas de ambos depósitos. La toma queda sumergida al final de la secuencia. El progreso del llenado ilustrativo aumenta con `dt × rapidez × 0,045` y se detiene al llegar a 1; este factor es de presentación, **no calcula un tiempo físico de llenado**. La solución hidráulica usa niveles de referencia fijos. «Pausar» detiene el avance visual; «Reproducir de nuevo» reinicia la secuencia. Si el caudal válido es cero, no hay movimiento; si no existe un punto vigente, se desactiva el flujo. El navegador debe poder mostrar WebGL para esta vista.
-
-Este es el avance del depósito de descarga en [`tanque_llenado.js`](pumpcalc/assets/tanque_llenado.js):
-
-```javascript
-animate() {
-  const now = performance.now();
-  const dt = Math.min((now - this.lastTime) / 1000, .08);
-  this.lastTime = now;
-  const moving = this.active && !this.paused && this.progress < 1
-    && !matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (moving) {
-    // Escala de demostración: Q determina la rapidez relativa, no el tiempo real.
-    this.progress = Math.min(1, this.progress + dt * this.speed * .045);
-    this.time += dt;
-    estados.set(this.sceneKey, { finished: this.progress === 1, progress: this.progress });
-    this.updateVisual();
-  }
-}
-```
-
-`dt` son los segundos transcurridos desde la actualización anterior, limitados a 0,08 para evitar saltos grandes. `progress` va de 0 a 1; al cambiar, `updateVisual()` mueve la superficie y el volumen de agua. `moving` exige resultado activo, ausencia de pausa y que no se haya completado la secuencia. La preferencia de movimiento reducido del navegador también detiene esta animación.
+`punto_vigente` habilita el cálculo temporal solo cuando existe una solución inicial con caudal positivo y los tanques tienen datos válidos. `VistaEscena3D._sincronizar_flujo` prepara una trayectoria nueva únicamente al cambiar la revisión del escenario o de los tanques. [`tanque_llenado.js`](pumpcalc/assets/tanque_llenado.js) reproduce esa trayectoria, informa tiempo, caudal y volúmenes corrientes, y comunica el nivel y la rapidez al resto de los componentes 3D. «Pausar» conserva el instante alcanzado; «Reproducir de nuevo» regresa a los volúmenes iniciales. Si no hay un punto inicial válido, se suspende el movimiento. La vista necesita WebGL.
 
 ### 3. Cómo interpretar el análisis de tiempo y recursos
 
@@ -155,7 +129,7 @@ print(f'Memoria máxima PSS (servidor + Chromium): {pico_pss / 1024:.1f} MiB')
 
 `len(tiempos) - 1` cuenta intervalos entre marcas; la resta de marcas está en milisegundos y se divide por 1000 para obtener segundos. Los ticks se convierten a segundos de CPU y luego a porcentaje de **un núcleo**. `pico_pss` está en KiB y se divide por 1024 para mostrar MiB. Son fragmentos del perfilador; entre la inicialización y la impresión, el bucle toma muestras de memoria cada 0,25 segundos y conserva la mayor.
 
-En este equipo, el **12 de noviembre de 2026**, dos ejecuciones reales de 10 segundos en modo con ventana dieron:
+En este equipo, el **12 de noviembre de 2026**, dos ejecuciones reales de 10 segundos en modo con ventana dieron los siguientes resultados **antes de añadir la integración temporal RK4**. Son antecedentes de la escena anterior y no una medición de rendimiento de esta versión:
 
 | Medida | Corrida 1 | Corrida 2 | Lectura para la sustentación |
 | --- | ---: | ---: | --- |
@@ -220,8 +194,9 @@ Abre <http://localhost:8080>. Para detenerlo, pulsa `Ctrl+C`; para retirar el co
 3. Compara las cifras y las escenas. El selector **3D / 2D** cambia ambas vistas sin alterar el cálculo. En 3D puedes girar la instalación y restablecer la cámara. En B pasan unos 4,381752 m³/h, pero el agua avanza a 1,513406 m/s frente a 2,130809 m/s en A. El área de la tubería crece más que el caudal, así que la velocidad disminuye.
 4. Vuelve a copiar A en B y cambia únicamente la longitud a 80 m. El recorrido dibujado se alarga y las trazas se ralentizan. También puedes cambiar el desnivel para mover el depósito de destino, o cambiar la rugosidad y K para observar las pérdidas indicadas en la escena.
 5. Abre **Detalle numérico** para ver el tramo de interpolación, el residuo y la cota de bisección, y las iteraciones de Colebrook cuando correspondan. Carga **Sin intersección** en B para ver cómo se presenta un caso sin cruce dentro del intervalo de la curva de la bomba.
+6. En **Agua inicial · vista 3D**, cambia el volumen inicial del origen de 1,2 a 0,5 m³. La trayectoria 3D se reinicia y termina antes; el caudal estacionario inicial permanece igual. Observa el tiempo simulado, el caudal instantáneo y los dos volúmenes bajo la escena.
 
-La curva de demostración es ficticia. El cálculo hidráulico es estacionario y usa niveles de referencia fijos. La vista 2D mantiene esos niveles; la 3D muestra una transferencia ilustrativa: baja el nivel en succión y sube en descarga, con rapidez relativa dependiente de la velocidad calculada. «Reproducir de nuevo» restablece la secuencia. Los niveles mostrados y la parada visual no predicen un tiempo de llenado ni una parada física de la bomba. Si Q = 0 hay solución sin movimiento; si faltan datos válidos o no hay cruce, se suspende el movimiento sin suponer Q = 0. La vista 3D requiere WebGL en el navegador. A y B se guardan en memoria mientras la página está abierta.
+La curva de demostración es ficticia. Los indicadores principales corresponden al punto **estacionario inicial**. La vista 2D mantiene niveles fijos. La vista 3D integra el cambio de volumen y vuelve a calcular el caudal al variar el desnivel; sus etiquetas muestran el estado transitorio. «Reproducir de nuevo» restablece los volúmenes iniciales. El tiempo estimado depende de los supuestos del modelo y no certifica una instalación real. Si Q = 0 hay solución sin movimiento; si faltan datos válidos o no hay cruce, se suspende el movimiento sin suponer Q = 0. La vista 3D requiere WebGL. A y B se guardan en memoria mientras la página está abierta.
 
 En «Curva de la bomba» puedes anotar opcionalmente la potencia nominal del motor (HP), la altura máxima Hmax (m) y el caudal máximo Qmax (m³/h). Son datos de referencia independientes para A y B: se copian con «Copiar A en B» y se muestran en la comparación. No sustituyen los pares caudal–altura ni modifican el cálculo. Hmax y Qmax no representan un mismo punto de funcionamiento.
 
@@ -274,7 +249,7 @@ Aquí `replace` crea un segundo escenario a partir de A, con el diámetro expres
 | Arranque y vista | [app.py](app.py), [vista.py](pumpcalc/vista.py), [tema.py](pumpcalc/tema.py) | Abren NiceGUI y conectan el formulario con los resultados. |
 | Edición y comparación | [simulacion.py](pumpcalc/simulacion.py), [comparacion.py](pumpcalc/comparacion.py), [ejemplos.py](pumpcalc/ejemplos.py) | Conservan entradas independientes por escenario y recalculan tras 200 ms sin cambios válidos. La meta se compara con el caudal calculado. |
 | Resultados y gráficas | [resultados.py](pumpcalc/resultados.py), [presentacion.py](pumpcalc/presentacion.py), [detalle.py](pumpcalc/detalle.py), [panel_comparacion.py](pumpcalc/panel_comparacion.py) | Presentan el resultado vigente y las iteraciones. La vista individual y la comparación comparten la preparación de las curvas. |
-| Animación | [animacion.py](pumpcalc/animacion.py), [escena.py](pumpcalc/escena.py), [escena3d.py](pumpcalc/escena3d.py), [animaciones](pumpcalc/assets), [modelo 3D](assets/modelos/bomba_usuario.glb) | La vista 2D mueve trazas desde Python. La vista 3D dibuja agua, bomba y depósitos con Three.js y anima el flujo en el navegador según la velocidad calculada. |
+| Llenado 3D y animación | [transitorio.py](pumpcalc/transitorio.py), [animacion.py](pumpcalc/animacion.py), [escena.py](pumpcalc/escena.py), [escena3d.py](pumpcalc/escena3d.py), [componentes 3D](pumpcalc/assets), [modelo 3D](assets/modelos/bomba_usuario.glb) | Runge–Kutta 4 calcula la trayectoria de volúmenes, caudal y velocidad; el navegador la reproduce en la escena 3D. La vista 2D conserva sus trazas de niveles fijos. |
 | Versión de escritorio anterior | [main.py](main.py), [pumpcalc/ui/](pumpcalc/ui/), [casos_uso.py](pumpcalc/casos_uso.py), [hydraulics.py](pumpcalc/hydraulics.py), [persistencia.py](pumpcalc/persistencia.py) | Usa CustomTkinter, calcula dos condiciones del tanque mediante Hazen–Williams y guarda escenarios en SQLite. |
 
 ## Pruebas

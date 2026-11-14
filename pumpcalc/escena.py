@@ -47,8 +47,18 @@ class VistaAnimacion:
                     self.lectura_q = ui.label()
                     self.lectura_v = ui.label()
                     self.lectura_nivel = ui.label()
-                ui.label('Arrastra para girar · Desliza para acercar · Q regula la rapidez relativa. '
-                         'El agua baja en origen y sube en destino; los niveles y la parada son ilustrativos.').classes(
+                with ui.element('div').classes('pc-timeline'):
+                    ui.label('RUNGE–KUTTA · LLENADO 3D').classes('pc-timeline-heading')
+                    ui.label('Tiempo simulado 0,0 min · Q — m³/h').props(
+                        f'id=pc-3d-time-{self.vista_3d.escena_id}').classes('pc-timeline-main')
+                    ui.label('Volúmenes iniciales').props(
+                        f'id=pc-3d-volume-{self.vista_3d.escena_id}').classes('pc-timeline-volume')
+                    ui.label('Alturas de agua y desnivel actual').props(
+                        f'id=pc-3d-level-{self.vista_3d.escena_id}').classes('pc-timeline-level')
+                    ui.label('1 s visual = 60 s simulados').props(
+                        f'id=pc-3d-stop-{self.vista_3d.escena_id}').classes('pc-timeline-note')
+                ui.label('Arrastra para girar · Desliza para acercar. Los niveles y el caudal '
+                         'evolucionan con el volumen transferido; la geometría 3D usa una escala visual.').classes(
                              'pc-scene-caption')
             with ui.element('div').classes('pc-2d-shell w-full') as self.contenedor_2d:
                 self.imagen = ui.interactive_image(size=(ANCHO_ESCENA, ALTO_ESCENA)).classes(
@@ -88,8 +98,8 @@ class VistaAnimacion:
             self.lectura_q.set_text('Q  — m³/h')
             self.lectura_v.set_text('v  — m/s')
         else:
-            self.lectura_q.set_text(f'Q  {punto.caudal_m3s * 3600:.3f} m³/h')
-            self.lectura_v.set_text(f'v  {punto.sistema.velocidad_ms:.3f} m/s')
+            self.lectura_q.set_text(f'Q  {punto.caudal_m3s * 3600:.3f} m³/h · inicial')
+            self.lectura_v.set_text(f'v  {punto.sistema.velocidad_ms:.3f} m/s · inicial')
         self.lectura_nivel.set_text('Desnivel Δz  — m' if instalacion is None else
                                     f'Desnivel Δz  {instalacion.desnivel_m:g} m')
         avisos = {
@@ -98,8 +108,10 @@ class VistaAnimacion:
             'sin_interseccion': 'Sin punto de operación en el intervalo ingresado',
             'falta_convergencia': 'No se obtuvo un punto de operación',
         }
-        self.aviso_3d.set_text(avisos.get(self.sesion.estado, ''))
-        self.aviso_3d.set_visibility(self.sesion.estado != 'solucion')
+        aviso = (str(self.sesion.error_tanques) if self.sesion.error_tanques else
+                 avisos.get(self.sesion.estado, ''))
+        self.aviso_3d.set_text(aviso)
+        self.aviso_3d.set_visibility(bool(aviso))
         self.actualizar_estado()
 
     def actualizar_estado(self) -> None:

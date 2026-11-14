@@ -67,7 +67,9 @@ export default class AguaEnTuberia {
       return;
     }
     if (!this.active || this.paused || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    this.phase = (this.phase + seconds * this.speed) % this.total;
+    const speed = window.__pumpcalcWaterStates?.get(this.sceneKey)?.speed ?? this.speed;
+    if (speed <= 0) return;
+    this.phase = (this.phase + seconds * speed) % this.total;
     this.draw();
   }
 

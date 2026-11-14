@@ -5,6 +5,13 @@ from copy import deepcopy
 from pumpcalc.ejemplos import caso_base
 from pumpcalc.entradas import ErrorEntrada, Escenario, numero_decimal, validar_curva, validar_instalacion
 from pumpcalc.operacion import PuntoOperacion, ResultadoOperacion, resolver_operacion
+from pumpcalc.transitorio import ConfiguracionTanques, validar_tanques
+
+
+TANQUES_BASE = {
+    'origen_area_m2': '1', 'origen_capacidad_m3': '1.6', 'origen_inicial_m3': '1.2',
+    'destino_area_m2': '1', 'destino_capacidad_m3': '1.6', 'destino_inicial_m3': '0.2',
+}
 
 
 class SesionSimulacion:
@@ -12,6 +19,7 @@ class SesionSimulacion:
 
     def __init__(self) -> None:
         self.revision = 0
+        self.revision_tanques = 0
         self.resultado: ResultadoOperacion | None = None
         self.escenario: Escenario | None = None
         self.error: ErrorEntrada | None = None
@@ -46,6 +54,10 @@ class SesionSimulacion:
         }
         self.puntos = [[f'{p.caudal_m3s * 3600:.12g}', f'{p.altura_m:.12g}']
                        for p in escenario.curva.puntos]
+        self.entradas_tanques = TANQUES_BASE.copy()
+        self.tanques: ConfiguracionTanques | None = None
+        self.error_tanques: ErrorEntrada | None = None
+        self._validar_tanques()
         self.preparar()
 
     def copiar(self) -> 'SesionSimulacion':
@@ -55,11 +67,29 @@ class SesionSimulacion:
         copia.datos_bomba = self.datos_bomba.copy()
         copia.errores_datos_bomba = self.errores_datos_bomba.copy()
         copia.puntos = [fila.copy() for fila in self.puntos]
+        copia.entradas_tanques = self.entradas_tanques.copy()
+        copia._validar_tanques()
         copia.preparar()
         if self.resultado is not None:
             copia.resultado = deepcopy(self.resultado)
             copia.estado = self.estado
         return copia
+
+    def _validar_tanques(self) -> None:
+        self.revision_tanques += 1
+        self.error_tanques = None
+        try:
+            self.tanques = validar_tanques(self.entradas_tanques)
+        except ErrorEntrada as error:
+            self.tanques = None
+            self.error_tanques = error
+
+    def editar_tanque(self, campo: str, valor: str) -> None:
+        """Afecta el transitorio 3D, no el punto estacionario ni la vista 2D."""
+        if campo not in self.entradas_tanques:
+            raise KeyError(campo)
+        self.entradas_tanques[campo] = valor
+        self._validar_tanques()
 
     def preparar(self) -> None:
         """Retira inmediatamente cualquier resultado de las entradas anteriores."""

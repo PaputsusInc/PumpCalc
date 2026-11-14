@@ -22,11 +22,11 @@ def test_geometria_conserva_orden_de_las_entradas_y_flujo_no_inventa_velocidad()
     base = caso_base().instalacion
     g = geometria_3d(base)
     assert g.nivel_destino > g.nivel_origen
-    assert g.nivel_inicial_destino < g.nivel_destino
+    assert g.nivel_inicial_destino == g.nivel_destino
     assert g.nivel_origen - g.descenso_origen == pytest.approx(g.nivel_final_origen)
-    assert g.nivel_final_origen > ALTURA_TOMA + g.radio * 1.48
-    assert g.descenso_origen * ANCHO_AGUA_ORIGEN * FONDO_AGUA == pytest.approx(
-        (g.nivel_destino - g.nivel_inicial_destino) * ANCHO_AGUA_DESTINO * FONDO_AGUA)
+    assert g.nivel_final_origen == ALTURA_TOMA
+    assert g.maximo_origen > g.nivel_origen
+    assert g.maximo_destino > g.nivel_destino
     assert geometria_3d(replace(base, desnivel_m=0)).nivel_destino == g.nivel_origen
     assert geometria_3d(replace(base, desnivel_m=30)).nivel_destino > g.nivel_destino
     assert geometria_3d(replace(base, longitud_m=80)).x_destino > g.x_destino
@@ -49,7 +49,10 @@ def test_vista_3d_sigue_solucion_pausa_error_y_cambio_a_2d(caplog):
             assert len(superficies) == 1
             assert len(canales) == 2 and all(c.activa for c in canales)
             assert flujo.activa and flujo.rapidez > 0 and not flujo.pausada
-            assert llenado.activa and llenado.rapidez == flujo.rapidez
+            assert llenado.activa and llenado.trayectoria[0][3] == pytest.approx(flujo.rapidez)
+            assert llenado.trayectoria[0][5:7] == pytest.approx([1.2, 0.2])
+            assert llenado.trayectoria[-1][5] < 1.2
+            assert llenado.trayectoria[-1][6] > 0.2
             assert superficies[0].args[4] == pytest.approx(geometria_3d(caso_base().instalacion).descenso_origen)
             assert llenado.args[3] < llenado.args[4]
             assert any(type(obj).__name__ == 'Gltf' for obj in scene.objects.values())
@@ -111,6 +114,36 @@ def test_escenarios_3d_comparten_escala_y_conservan_velocidades_independientes(c
             assert flujo_b.args[2] > flujo_a.args[2]
             user.find('Comparar A y B').click()
             assert len(user.find(ui.scene).elements) == 2
+
+    asyncio.run(recorrido())
+    assert not [registro for registro in caplog.records if registro.levelname == 'ERROR']
+
+
+def test_volumen_inicial_reinicia_solo_trayectoria_3d(caplog):
+    async def recorrido():
+        async with user_simulation(main_file=APP) as user:
+            await user.open('/')
+            (escena,) = user.find(ui.scene).elements
+            (llenado,) = [o for o in escena.objects.values() if isinstance(o, TanqueLlenado)]
+            tiempo_anterior = llenado.trayectoria[-1][0]
+            campos = user.find(kind=ui.input, content='Agua inicial (m³)').elements
+            origen = next(campo for campo in campos if campo.value == '1.2')
+            with user:
+                origen.set_value('0,5')
+            (nuevo,) = [o for o in escena.objects.values() if isinstance(o, TanqueLlenado)]
+            assert nuevo.trayectoria[0][5] == pytest.approx(.5)
+            assert nuevo.trayectoria[0][6] == pytest.approx(.2)
+            assert nuevo.trayectoria[-1][0] < tiempo_anterior
+            assert nuevo.trayectoria[-1][5] == pytest.approx(0)
+            assert nuevo.trayectoria[-1][6] == pytest.approx(.7)
+            assert nuevo.trayectoria[0][9] == pytest.approx(12)
+            assert nuevo.trayectoria[-1][9] == pytest.approx(13)
+            await user.should_see('3,765450 m³/h')  # punto estacionario inicial intacto
+            with user:
+                origen.set_value('2')
+            await user.should_see('El volumen inicial debe estar entre 0 y la capacidad.')
+            (detenido,) = [o for o in escena.objects.values() if isinstance(o, TanqueLlenado)]
+            assert not detenido.activa
 
     asyncio.run(recorrido())
     assert not [registro for registro in caplog.records if registro.levelname == 'ERROR']
