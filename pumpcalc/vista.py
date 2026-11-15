@@ -225,15 +225,25 @@ def construir_vista() -> None:
     def resultados() -> None:
         mostrar_resultados(sesion, proyecto.activo, comparando=proyecto.comparando)
 
+    # ═══════════════════════════════════════════════════════════════════
+    #  LAYOUT — Estructura visual rediseñada
+    # ═══════════════════════════════════════════════════════════════════
+
     aplicar_tema()
+
+    # ── Header ─────────────────────────────────────────────────────────
     with ui.header().classes('pc-header items-center gap-3'):
-        ui.icon('water_drop', size='23px').classes('pc-logo').props('aria-hidden=true')
+        ui.icon('water_drop', size='22px').classes('pc-logo').props('aria-hidden=true')
         ui.label('PumpCalc').classes('pc-brand')
         ui.label('Explora. Compara. Entiende.').classes('pc-header-note')
         with ui.row().classes('pc-local'):
             ui.icon('circle').props('aria-hidden=true')
             ui.label('Tu laboratorio local')
+
+    # ── Main ───────────────────────────────────────────────────────────
     with ui.column().classes('pc-main'):
+
+        # ── Toolbar: Control de escenarios ─────────────────────────────
         with ui.card().classes('pc-panel pc-toolbar w-full'):
             with ui.element('div').classes('pc-toolbar-main'):
                 ui.label('EXPERIMENTA').classes('pc-eyebrow')
@@ -249,8 +259,14 @@ def construir_vista() -> None:
                 ejemplo = ui.select(EJEMPLOS, label='Ejemplo', value='base').props('outlined dense')
                 ui.button('Cargar ejemplo', icon='science', on_click=lambda: cargar_ejemplo(ejemplo.value)).props('flat')
                 ui.label('Tres puntos de partida. Todas tus preguntas. Datos ficticios.').classes('pc-example-note')
+
+        # ── Lab: Sidebar + Stage ───────────────────────────────────────
         with ui.element('div').classes('pc-lab'):
+
+            # ── Sidebar: Configuración ─────────────────────────────────
             with ui.element('aside').classes('pc-config'):
+
+                # Panel: Instalación
                 with ui.card().classes('pc-panel w-full'):
                     encabezado_seccion('Instalación', 'Dale forma a tu experimento.', 'tune')
                     ui.label('Acepta coma o punto decimal, sin separadores de miles.').classes('text-xs text-slate-600')
@@ -264,6 +280,8 @@ def construir_vista() -> None:
                         ):
                             entrada(clave, etiqueta, sesion.entradas[clave],
                                     lambda e, clave=clave: editar_instalacion(clave, e.value))
+
+                # Panel: Curva de la bomba
                 with ui.card().classes('pc-panel w-full'):
                     encabezado_seccion('Curva de la bomba', 'Los datos que ponen todo en marcha.', 'ssid_chart')
                     ui.label('Datos generales del escenario (opcionales)').classes('text-sm font-semibold')
@@ -282,6 +300,8 @@ def construir_vista() -> None:
                         'text-sm text-slate-600'
                     )
                     tabla()
+
+                # Panel: Agua inicial · vista 3D
                 with ui.card().classes('pc-panel pc-tanks w-full'):
                     encabezado_seccion('Agua inicial · vista 3D',
                                        'Del volumen al nivel, y del nivel al caudal.', 'water')
@@ -305,6 +325,8 @@ def construir_vista() -> None:
                                 clave = f'{nombre}_{magnitud}'
                                 entrada(clave, etiqueta, sesion.entradas_tanques[clave],
                                         lambda e, clave=clave: editar_tanque(clave, e.value))
+
+                # Panel: Meta
                 with ui.card().classes('pc-panel pc-target w-full'):
                     encabezado_seccion('Una meta, dos escenarios', '¿Hasta dónde llega cada configuración?', 'flag')
                     objetivo = ui.input('Caudal objetivo común (m³/h, opcional)', value=proyecto.objetivo_texto,
@@ -312,6 +334,8 @@ def construir_vista() -> None:
                                         validation=lambda _: str(proyecto.error_objetivo)
                                         if proyecto.error_objetivo else None).props('outlined inputmode=decimal').classes('w-full')
                     metas()
+
+            # ── Stage: Visualización + Resultados ──────────────────────
             with ui.element('section').classes('pc-stage'):
                 with ui.element('div').classes('pc-view-switch'):
                     ui.label('Visualización del agua').classes('pc-view-switch-label')
@@ -324,6 +348,8 @@ def construir_vista() -> None:
                         escenas[nombre].contenedor.set_visibility(nombre == 'A')
                 comparacion()
                 resultados()
+
+        # ── Footer ─────────────────────────────────────────────────────
         with ui.element('footer').classes('pc-footer'):
             ui.html('<strong>PumpCalc</strong> · Entender el flujo cambia la perspectiva.')
             ui.label('Modelo educativo · Cálculo estacionario · Visualización ilustrativa · '
