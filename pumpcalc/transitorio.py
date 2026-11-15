@@ -66,7 +66,6 @@ class TrayectoriaLlenado:
 
 
 def paso_runge_kutta4(derivada: Callable[[float], float], valor: float, paso: float) -> float:
-
     k1 = derivada(valor)
     k2 = derivada(valor + paso * k1 / 2)
     k3 = derivada(valor + paso * k2 / 2)
