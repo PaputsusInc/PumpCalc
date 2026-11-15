@@ -16,7 +16,7 @@ def inicio() -> None:
 if __name__ == '__main__':
     ui.run(
         host=os.getenv('PUMPCALC_HOST', '127.0.0.1'),
-        port=int(os.getenv('PUMPCALC_PORT', '8080')),
+        port=int(os.getenv('PUMPCALC_PORT', '8081')),
         title='PumpCalc · Simulador de bombeo',
         language='es',
         reload=False,
