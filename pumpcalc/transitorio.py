@@ -66,11 +66,16 @@ class TrayectoriaLlenado:
 
 
 def paso_runge_kutta4(derivada: Callable[[float], float], valor: float, paso: float) -> float:
+
     k1 = derivada(valor)
     k2 = derivada(valor + paso * k1 / 2)
     k3 = derivada(valor + paso * k2 / 2)
     k4 = derivada(valor + paso * k3)
+
     return paso * (k1 + 2 * k2 + 2 * k3 + k4) / 6
+
+
+
 
 
 def simular_llenado(escenario: Escenario, tanques: ConfiguracionTanques, *,
