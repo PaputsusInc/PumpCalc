@@ -1,0 +1,13 @@
+.git
+.venv
+.pytest_cache
+__pycache__
+**/__pycache__
+*.pyc
+*.blend
+*.sqlite3
+.agents
+docs
+tests
+tools
+assets/modelos/referencia

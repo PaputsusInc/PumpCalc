@@ -1,4 +1,4 @@
-"""Cálculo hidráulico y bisección en Python puro.
+"""Modelo de Hazen–Williams para la versión de escritorio anterior.
 
 Unidades internas: caudal en m³/h, longitud y altura en m, diámetro en mm.
 La ecuación de Hazen-Williams se evalúa con Q en m³/s y D en m.
@@ -17,6 +17,7 @@ def altura_instalacion(caudal_m3h, longitud_m, diametro_mm, coeficiente_c,
     area_m2 = PI * diametro_m * diametro_m / 4.0
     velocidad_ms = caudal_m3s / area_m2
 
+    # Hazen–Williams usa el coeficiente C del material para la pérdida lineal.
     perdida_tuberia_m = (
         10.67 * longitud_m * caudal_m3s ** 1.852
         / (coeficiente_c ** 1.852 * diametro_m ** 4.871)

@@ -3,6 +3,13 @@ import tkinter as tk
 import unittest
 from pathlib import Path
 
+import pytest
+
+pytest.importorskip(
+    "customtkinter",
+    reason="Interfaz de escritorio heredada: CustomTkinter no forma parte del entorno NiceGUI.",
+)
+
 from pumpcalc.casos_uso import firma_calculo
 from pumpcalc.persistencia import AlmacenEscenarios
 from pumpcalc.ui.app import PumpCalcApp
